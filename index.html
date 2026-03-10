@@ -154,6 +154,18 @@
     <p>表紙を読み取り、蔵書リストへ自動登録</p>
   </div>
 
+  <div class="config-box" id="apiBox">
+    <div class="config-label">
+      <span>🔑 Anthropic APIキー</span>
+      <span class="badge" id="apiSavedBadge" style="display:none">✦ 設定済み</span>
+    </div>
+    <div class="config-row">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+      <button class="btn-sm" onclick="saveApiKey()">保存</button>
+    </div>
+    <p>APIキーはこのブラウザにのみ保存されます（GitHubには載りません）</p>
+  </div>
+
   <div class="config-box" id="configBox">
     <div class="config-label">
       <span>🔗 GAS WebアプリURL</span>
@@ -232,14 +244,29 @@
   let imageBase64 = null;
   let imageMime = 'image/jpeg';
   let gasUrl = localStorage.getItem('gasUrl') || '';
+  let apiKey = localStorage.getItem('apiKey') || '';
 
   window.onload = () => {
+    if (apiKey) {
+      document.getElementById('apiKeyInput').value = apiKey;
+      document.getElementById('apiSavedBadge').style.display = 'inline';
+      document.getElementById('apiBox').classList.add('saved');
+    }
     if (gasUrl) {
       document.getElementById('gasUrl').value = gasUrl;
       document.getElementById('savedBadge').style.display = 'inline';
       document.getElementById('configBox').classList.add('saved');
     }
   };
+
+  function saveApiKey() {
+    apiKey = document.getElementById('apiKeyInput').value.trim();
+    if (apiKey) {
+      localStorage.setItem('apiKey', apiKey);
+      document.getElementById('apiSavedBadge').style.display = 'inline';
+      document.getElementById('apiBox').classList.add('saved');
+    }
+  }
 
   function saveUrl() {
     gasUrl = document.getElementById('gasUrl').value.trim();
@@ -282,6 +309,8 @@
   }
 
   async function analyze() {
+    apiKey = document.getElementById('apiKeyInput').value.trim();
+    if (!apiKey) { alert('APIキーを入力・保存してください'); return; }
     const btn = document.getElementById('analyzeBtn');
     btn.disabled = true;
     btn.textContent = '🔍 表紙を解析しています…';
@@ -290,7 +319,7 @@
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': 'REMOVED-API-KEY', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
