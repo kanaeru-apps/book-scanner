@@ -162,7 +162,6 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   let imageBase64 = null;
   let imageMime = 'image/jpeg';
 
-  // localStorageから読み込んだ値を一元管理
   let apiKey = localStorage.getItem('apiKey') || '';
   let gasUrl = localStorage.getItem('gasUrl') || '';
 
@@ -221,19 +220,38 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   function onFileChange(e) {
     if (e.target.files[0]) loadFile(e.target.files[0]);
   }
+
+  // ── ✅ 画像リサイズ（スマホ対応）────────────────────────
   function loadFile(file) {
     if (!file.type.startsWith('image/')) return;
     imageMime = file.type;
     const reader = new FileReader();
     reader.onload = (e) => {
-      imageBase64 = e.target.result.split(',')[1];
-      document.getElementById('previewImg').src = e.target.result;
-      document.getElementById('uploadPlaceholder').style.display = 'none';
-      document.getElementById('uploadPreview').style.display = 'block';
-      document.getElementById('uploadArea').classList.add('has-image');
-      document.getElementById('uploadArea').style.cursor = 'default';
-      document.getElementById('analyzeBtn').style.display = 'block';
-      document.getElementById('resultCard').style.display = 'none';
+      const img = new Image();
+      img.onload = () => {
+        // 長辺1000px以下にリサイズ
+        const MAX = 1000;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else       { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const resized = canvas.toDataURL('image/jpeg', 0.85);
+        imageBase64 = resized.split(',')[1];
+        imageMime = 'image/jpeg';
+
+        document.getElementById('previewImg').src = resized;
+        document.getElementById('uploadPlaceholder').style.display = 'none';
+        document.getElementById('uploadPreview').style.display = 'block';
+        document.getElementById('uploadArea').classList.add('has-image');
+        document.getElementById('uploadArea').style.cursor = 'default';
+        document.getElementById('analyzeBtn').style.display = 'block';
+        document.getElementById('resultCard').style.display = 'none';
+      };
+      img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   }
@@ -259,7 +277,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
           'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-5',  // ✅ 修正: 最新モデル名
+          model: 'claude-sonnet-4-5',  // ✅ 最新モデル名
           max_tokens: 1000,
           messages: [{
             role: 'user',
@@ -279,7 +297,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       const data = await res.json();
       const text = data.content.map(i => i.text || '').join('');
 
-      // ✅ 修正: JSONパースを堅牢化（コードブロック・前後テキストを除去）
+      // ✅ JSONパース堅牢化
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('JSONレスポンスが取得できませんでした');
       const parsed = JSON.parse(jsonMatch[0]);
@@ -298,7 +316,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       enableFields(true);
 
     } catch(e) {
-      alert('解析に失敗しました。\n' + e.message);  // ✅ 修正: エラー内容を表示
+      alert('解析に失敗しました。\n' + e.message);  // ✅ エラー詳細表示
     }
 
     btn.disabled = false;
@@ -319,7 +337,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     ['f_title', 'f_author', 'f_genre', 'f_comment', 'f_date'].forEach(id => {
       document.getElementById(id).disabled = !enabled;
     });
-    // ✅ 修正: data-n は HTML側に静的に定義済みなのでここでは触らない
+    // ✅ data-nはHTML側に静的定義済みなのでここでは触らない
     document.querySelectorAll('.star').forEach(s => {
       s.classList.toggle('disabled', !enabled);
       s.style.cursor = enabled ? 'pointer' : 'default';
@@ -329,7 +347,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     });
   }
 
-  // ── スプレッドシートへ登録（GAS）────────────────────────
+  // ── スプレッドシートへ登録（POST方式・Safari対応）──────
   async function saveToSheet() {
     if (!gasUrl) { alert('GAS WebアプリURLを入力してください'); return; }
 
@@ -347,11 +365,10 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     };
 
     try {
-      const encoded = encodeURIComponent(JSON.stringify(payload));
-      // ✅ 修正: Safari対応 - redirect followを明示
-      const res = await fetch(`${gasUrl}?data=${encoded}`, {
-        method: 'GET',
-        redirect: 'follow',
+      // ✅ GETからPOSTに変更（SafariのURL長さ制限を回避）
+      const res = await fetch(gasUrl, {
+        method: 'POST',
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error(`HTTPエラー: ${res.status}`);
@@ -366,7 +383,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
         throw new Error(json.error || '不明なエラー');
       }
     } catch(e) {
-      alert('保存に失敗しました。\n' + e.message);  // ✅ 修正: エラー内容を表示
+      alert('保存に失敗しました。\n' + e.message);  // ✅ エラー詳細表示
       btn.disabled = false;
       btn.textContent = '📚 スプレッドシートに登録';
     }
