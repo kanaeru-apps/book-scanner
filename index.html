@@ -7,11 +7,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { min-height: 100vh; background: #1c1510; background-image: radial-gradient(ellipse at 20% 10%, rgba(120,80,20,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 90%, rgba(80,40,10,0.2) 0%, transparent 60%); font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif; color: #d4b896; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+body { min-height: 100vh; background: #1c1510; background-image: radial-gradient(ellipse at 20% 10%, rgba(120,80,20,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 90%, rgba(80,40,10,0.2) 0%, transparent 60%); font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif; color: #d4b896; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
 .container { width: 100%; max-width: 520px; }
 .header { text-align: center; margin-bottom: 2rem; }
-.header-sub { font-family: 'Playfair Display', serif; font-size: 0.7rem; letter-spacing: 0.4em; color: #8a6a3a; text-transform: uppercase; margin-bottom: 0.5rem; }
-.header h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; color: #e8c87a; text-shadow: 0 2px 20px rgba(200,149,42,0.3); }
+.header-sub { font-family: 'Playfair Display', Georgia, serif; font-size: 0.7rem; letter-spacing: 0.4em; color: #8a6a3a; text-transform: uppercase; margin-bottom: 0.5rem; }
+.header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2.2rem; font-weight: 700; color: #e8c87a; text-shadow: 0 2px 20px rgba(200,149,42,0.3); }
 .divider { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, #8a6a3a, transparent); margin: 0.8rem auto; }
 .header p { color: #6a5030; font-size: 0.85rem; font-style: italic; }
 .config-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(200,149,42,0.15); border-radius: 4px; padding: 1.2rem; margin-bottom: 1.5rem; transition: border 0.3s; }
@@ -25,17 +25,18 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 .upload-area { border: 2px dashed rgba(200,149,42,0.25); border-radius: 4px; padding: 2.5rem 2rem; text-align: center; background: rgba(0,0,0,0.2); transition: all 0.3s; margin-bottom: 1.2rem; position: relative; }
 .upload-area.dragging { border-color: #c8952a; background: rgba(200,149,42,0.05); }
 .upload-area.has-image { padding: 1rem; }
+.upload-area.locked { pointer-events: none; opacity: 0.7; }
 .upload-icon { font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.5; }
-.upload-text { color: #8a6a3a; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem; }
+.upload-text { color: #8a6a3a; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.2rem; }
 .upload-actions { display: flex; gap: 0.8rem; justify-content: center; }
-.upload-action-btn { background: rgba(200,149,42,0.1); border: 1px solid rgba(200,149,42,0.25); color: #8a6a3a; border-radius: 3px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: all 0.2s; }
+.upload-action-btn { background: rgba(200,149,42,0.1); border: 1px solid rgba(200,149,42,0.25); color: #8a6a3a; border-radius: 3px; padding: 0.65rem 1.2rem; cursor: pointer; font-size: 0.85rem; font-family: inherit; transition: all 0.2s; min-width: 120px; }
 .upload-action-btn:hover { border-color: rgba(200,149,42,0.5); color: #c8952a; }
 .preview-img { max-height: 260px; max-width: 100%; border-radius: 2px; box-shadow: 4px 4px 20px rgba(0,0,0,0.6); }
 .remove-btn { position: absolute; top: -10px; right: -10px; background: #3a2010; border: 1px solid rgba(200,149,42,0.4); color: #c8952a; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
 .img-wrap { position: relative; display: inline-block; }
-.btn { width: 100%; padding: 0.9rem; border: none; border-radius: 3px; background: linear-gradient(135deg, #c8952a, #e8c87a, #c8952a); color: #1c1510; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 20px rgba(200,149,42,0.3); letter-spacing: 0.05em; transition: all 0.2s; }
+.btn { width: 100%; padding: 0.9rem; border: none; border-radius: 3px; background: linear-gradient(135deg, #c8952a, #e8c87a, #c8952a); color: #1c1510; font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 20px rgba(200,149,42,0.3); letter-spacing: 0.05em; transition: all 0.2s; }
 .btn:hover { opacity: 0.85; transform: translateY(-1px); }
-.btn:disabled { background: rgba(200,149,42,0.2); color: #8a6a3a; box-shadow: none; cursor: wait; transform: none; }
+.btn:disabled { background: rgba(200,149,42,0.2); color: #8a6a3a; box-shadow: none; cursor: not-allowed; transform: none; pointer-events: none; }
 .btn-sm { background: rgba(200,149,42,0.2); border: 1px solid rgba(200,149,42,0.3); color: #c8952a; border-radius: 3px; padding: 0 1rem; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: all 0.2s; white-space: nowrap; }
 .btn-sm:hover { opacity: 0.85; }
 .error-box { background: rgba(180,40,40,0.1); border: 1px solid rgba(180,40,40,0.4); border-radius: 4px; padding: 0.8rem 1rem; margin-bottom: 1rem; color: #e07070; font-size: 0.82rem; line-height: 1.5; display: none; }
@@ -46,24 +47,31 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 @keyframes shimmer { 0%,100% { opacity:0.6; } 50% { opacity:1; } }
 .shimmer { animation: shimmer 1.5s ease infinite; }
 .stamp { position: absolute; top: 16px; right: 16px; border: 3px solid #4a9a4a; color: #4a9a4a; padding: 4px 10px; border-radius: 2px; font-size: 0.7rem; letter-spacing: 0.15em; font-weight: bold; transform: rotate(-8deg); animation: stamp 0.4s cubic-bezier(0.22,0.61,0.36,1) forwards; }
-.card-title-label { font-family: 'Playfair Display', serif; font-size: 0.65rem; letter-spacing: 0.3em; color: #6a5030; text-transform: uppercase; margin-bottom: 1rem; }
+.card-title-label { font-family: 'Playfair Display', Georgia, serif; font-size: 0.65rem; letter-spacing: 0.3em; color: #6a5030; text-transform: uppercase; margin-bottom: 1rem; }
 .field { margin-bottom: 1rem; }
 .field-label { font-size: 0.65rem; letter-spacing: 0.2em; color: #6a5030; text-transform: uppercase; margin-bottom: 0.3rem; display: flex; justify-content: space-between; align-items: baseline; }
 .char-count { font-size: 0.6rem; color: #4a3820; letter-spacing: 0; text-transform: none; }
 .field input, .field textarea { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(200,149,42,0.2); color: #d4b896; font-size: 0.9rem; padding: 0.3rem 0; font-family: inherit; resize: none; line-height: 1.6; }
 .field input:focus, .field textarea:focus { outline: none; border-bottom-color: rgba(200,149,42,0.5); }
-.field input.title-input { color: #e8c87a; font-size: 1.15rem; font-family: 'Playfair Display', serif; }
+.field input.title-input { color: #e8c87a; font-size: 1.15rem; font-family: 'Playfair Display', Georgia, serif; }
 .field input:disabled, .field textarea:disabled { border-bottom-color: transparent; }
+.field input:disabled::placeholder, .field textarea:disabled::placeholder { color: transparent; }
+/* 日付フィールドは読み取り専用スタイル */
+#f_date { color: #6a5030; font-size: 0.8rem; cursor: default; }
+/* 星評価：キーボードフォーカス対応 */
 .stars { display: flex; gap: 4px; }
-.star { font-size: 24px; cursor: pointer; transition: color 0.15s; color: #3a2f1e; }
+.star { font-size: 24px; cursor: pointer; transition: color 0.15s; color: #3a2f1e; user-select: none; }
+.star:focus { outline: 2px solid rgba(200,149,42,0.5); border-radius: 2px; }
 .star.active { color: #c8952a; text-shadow: 0 0 8px rgba(200,149,42,0.5); }
-.star.disabled { cursor: default; }
+.star.disabled { cursor: default; pointer-events: none; }
+/* タイトル未入力時の保存ボタン */
+.btn-save.invalid { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 .btn-row { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
 .btn-reset { flex: 1; padding: 0.7rem; background: transparent; border: 1px solid rgba(200,149,42,0.2); color: #6a5030; border-radius: 3px; cursor: pointer; font-size: 0.85rem; font-family: inherit; transition: all 0.2s; }
 .btn-reset:hover { opacity: 0.85; }
-.btn-save { flex: 2; padding: 0.7rem; background: linear-gradient(135deg, #c8952a, #e8c87a); border: none; border-radius: 3px; color: #1c1510; font-weight: bold; font-size: 0.9rem; cursor: pointer; font-family: 'Playfair Display', serif; transition: all 0.2s; }
+.btn-save { flex: 2; padding: 0.7rem; background: linear-gradient(135deg, #c8952a, #e8c87a); border: none; border-radius: 3px; color: #1c1510; font-weight: bold; font-size: 0.9rem; cursor: pointer; font-family: 'Playfair Display', Georgia, serif; transition: all 0.2s; }
 .btn-save:hover { opacity: 0.85; transform: translateY(-1px); }
-.btn-save:disabled { opacity: 0.5; cursor: wait; transform: none; }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; pointer-events: none; }
 .btn-next { flex: 2; padding: 0.7rem; background: rgba(74,154,74,0.15); border: 1px solid rgba(74,154,74,0.3); color: #4a9a4a; border-radius: 3px; cursor: pointer; font-size: 0.85rem; font-family: inherit; transition: all 0.2s; }
 .btn-next:hover { opacity: 0.85; }
 .footer { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; color: #3a2810; }
@@ -84,7 +92,8 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       <span class="badge" id="apiSavedBadge" style="display:none">✦ 設定済み</span>
     </div>
     <div class="config-row">
-      <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..."
+             onkeydown="if(event.key==='Enter') saveApiKey()">
       <button class="btn-sm" onclick="saveApiKey()">保存</button>
     </div>
     <p>APIキーはセッション中のみ保持されます（タブを閉じると消去されます）</p>
@@ -96,13 +105,15 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       <span class="badge" id="savedBadge" style="display:none">✦ 設定済み</span>
     </div>
     <div class="config-row">
-      <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/...">
+      <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/..."
+             onkeydown="if(event.key==='Enter') saveUrl()">
       <button class="btn-sm" onclick="saveUrl()">保存</button>
     </div>
     <p>GAS「デプロイ」→「デプロイを管理」でURLをコピーして貼り付け</p>
   </div>
 
-  <div class="upload-area" id="uploadArea" ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
+  <div class="upload-area" id="uploadArea"
+       ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
     <div id="uploadPlaceholder">
       <div class="upload-icon">📖</div>
       <div class="upload-text">本の表紙画像を追加</div>
@@ -119,8 +130,9 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     </div>
   </div>
 
-  <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="onFileChange(event)">
+  <input type="file" id="fileInput"   accept="image/*"                       style="display:none" onchange="onFileChange(event)">
   <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="onFileChange(event)">
+
   <button class="btn" id="analyzeBtn" style="display:none" onclick="analyze()">✦ 表紙を解析する</button>
 
   <div class="error-box" id="errorBox"></div>
@@ -130,11 +142,14 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     <div class="card-title-label">— Library Card —</div>
     <div class="field">
       <div class="field-label"><span>タイトル</span></div>
-      <input type="text" id="f_title" class="title-input">
+      <input type="text" id="f_title" class="title-input"
+             oninput="onTitleInput()"
+             onkeydown="if(event.key==='Enter') document.getElementById('f_author').focus()">
     </div>
     <div class="field">
       <div class="field-label"><span>著者名</span></div>
-      <input type="text" id="f_author">
+      <input type="text" id="f_author"
+             onkeydown="if(event.key==='Enter') document.getElementById('f_genre').focus()">
     </div>
     <div class="field">
       <div class="field-label"><span>ジャンル</span></div>
@@ -142,12 +157,12 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     </div>
     <div class="field">
       <div class="field-label"><span>評価</span></div>
-      <div class="stars" id="stars">
-        <span class="star" data-n="1" onclick="setRating(1)">★</span>
-        <span class="star" data-n="2" onclick="setRating(2)">★</span>
-        <span class="star" data-n="3" onclick="setRating(3)">★</span>
-        <span class="star" data-n="4" onclick="setRating(4)">★</span>
-        <span class="star" data-n="5" onclick="setRating(5)">★</span>
+      <div class="stars" id="stars" role="radiogroup" aria-label="評価">
+        <span class="star" data-n="1" onclick="setRating(1)" tabindex="0" role="radio" aria-label="1">★</span>
+        <span class="star" data-n="2" onclick="setRating(2)" tabindex="0" role="radio" aria-label="2">★</span>
+        <span class="star" data-n="3" onclick="setRating(3)" tabindex="0" role="radio" aria-label="3">★</span>
+        <span class="star" data-n="4" onclick="setRating(4)" tabindex="0" role="radio" aria-label="4">★</span>
+        <span class="star" data-n="5" onclick="setRating(5)" tabindex="0" role="radio" aria-label="5">★</span>
       </div>
     </div>
     <div class="field">
@@ -166,7 +181,8 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     </div>
     <div class="field">
       <div class="field-label"><span>登録日</span></div>
-      <input type="text" id="f_date">
+      <!-- 登録日は読み取り専用（ユーザーが書き換えられないように） -->
+      <input type="text" id="f_date" readonly tabindex="-1">
     </div>
     <div class="btn-row">
       <button class="btn-reset" onclick="resetAll()">リセット</button>
@@ -179,13 +195,16 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 </div>
 
 <script>
+  // ── 状態管理 ──────────────────────────────────────────
   let currentRating = 3;
-  let imageBase64 = null;
-  let imageMime = 'image/jpeg';
+  let imageBase64   = null;
+  let imageMime     = 'image/jpeg';
+  let isSaving      = false;
 
   let apiKey = sessionStorage.getItem('apiKey') || '';
-  let gasUrl = localStorage.getItem('gasUrl') || '';
+  let gasUrl = localStorage.getItem('gasUrl')   || '';
 
+  // ── 初期化 ────────────────────────────────────────────
   window.onload = () => {
     if (apiKey) {
       document.getElementById('apiKeyInput').value = apiKey;
@@ -197,8 +216,11 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       document.getElementById('savedBadge').style.display = 'inline';
       document.getElementById('configBox').classList.add('saved');
     }
+    // 星キーボード操作
+    document.getElementById('stars').addEventListener('keydown', onStarKeydown);
   };
 
+  // ── 設定保存 ──────────────────────────────────────────
   function saveApiKey() {
     const val = document.getElementById('apiKeyInput').value.trim();
     if (val) {
@@ -219,11 +241,20 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     }
   }
 
+  // ── 文字数カウント ────────────────────────────────────
   function updateCount(fieldId, countId) {
     const len = document.getElementById(fieldId).value.length;
     document.getElementById(countId).textContent = len + '文字';
   }
 
+  // ── タイトル入力でボタン制御 ─────────────────────────
+  function onTitleInput() {
+    const btn   = document.getElementById('saveBtn');
+    const empty = document.getElementById('f_title').value.trim() === '';
+    btn.classList.toggle('invalid', empty);
+  }
+
+  // ── エラー表示 ────────────────────────────────────────
   function showError(msg) {
     const box = document.getElementById('errorBox');
     box.textContent = '⚠ ' + msg;
@@ -235,11 +266,33 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     box.classList.remove('show');
   }
 
-  function triggerUpload() { document.getElementById('fileInput').click(); }
-  function triggerCamera() { document.getElementById('cameraInput').click(); }
+  // ── 画像アップロード ──────────────────────────────────
+  function triggerUpload() {
+    refreshFileInput('fileInput', false);
+    document.getElementById('fileInput').click();
+  }
+  function triggerCamera() {
+    refreshFileInput('cameraInput', true);
+    document.getElementById('cameraInput').click();
+  }
+  // iOS Safari対策：inputを都度再生成してvalue=''問題を回避
+  function refreshFileInput(id, isCamera) {
+    const old    = document.getElementById(id);
+    const neo    = document.createElement('input');
+    neo.type     = 'file';
+    neo.id       = id;
+    neo.accept   = 'image/*';
+    neo.style    = 'display:none';
+    if (isCamera) neo.setAttribute('capture', 'environment');
+    neo.onchange = onFileChange;
+    // body直下に挿入（親ノード依存を排除）
+    document.body.appendChild(neo);
+    old.remove();
+  }
 
   function onDragOver(e) {
     e.preventDefault();
+    if (document.getElementById('uploadArea').classList.contains('locked')) return;
     document.getElementById('uploadArea').classList.add('dragging');
   }
   function onDragLeave() {
@@ -248,6 +301,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   function onDrop(e) {
     e.preventDefault();
     document.getElementById('uploadArea').classList.remove('dragging');
+    if (document.getElementById('uploadArea').classList.contains('locked')) return;
     const file = e.dataTransfer.files[0];
     if (file) loadFile(file);
   }
@@ -255,8 +309,12 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     if (e.target.files[0]) loadFile(e.target.files[0]);
   }
 
+  // ── 画像リサイズ ──────────────────────────────────────
   function loadFile(file) {
-    if (!file.type.startsWith('image/')) return;
+    if (!file.type.startsWith('image/')) {
+      showError('画像ファイルを選択してください');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -272,14 +330,14 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
         const resized = canvas.toDataURL('image/jpeg', 0.85);
         imageBase64 = resized.split(',')[1];
-        imageMime = 'image/jpeg';
+        imageMime   = 'image/jpeg';
 
         document.getElementById('previewImg').src = resized;
         document.getElementById('uploadPlaceholder').style.display = 'none';
-        document.getElementById('uploadPreview').style.display = 'block';
+        document.getElementById('uploadPreview').style.display     = 'block';
         document.getElementById('uploadArea').classList.add('has-image');
-        document.getElementById('analyzeBtn').style.display = 'block';
-        document.getElementById('resultCard').style.display = 'none';
+        document.getElementById('analyzeBtn').style.display        = 'block';
+        document.getElementById('resultCard').style.display        = 'none';
         clearError();
       };
       img.src = e.target.result;
@@ -287,13 +345,17 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     reader.readAsDataURL(file);
   }
 
+  // ── 表紙解析 ──────────────────────────────────────────
   async function analyze() {
-    if (!apiKey) { showError('APIキーを入力・保存してください'); return; }
+    if (!apiKey)      { showError('APIキーを入力・保存してください'); return; }
+    if (!imageBase64) { showError('画像を選択してください'); return; }
 
-    const btn = document.getElementById('analyzeBtn');
-    btn.disabled = true;
-    btn.textContent = '🔍 表紙を解析しています…';
+    const btn        = document.getElementById('analyzeBtn');
+    const uploadArea = document.getElementById('uploadArea');
+    btn.disabled     = true;
+    btn.textContent  = '🔍 表紙を解析しています…';
     btn.classList.add('shimmer');
+    uploadArea.classList.add('locked');
     clearError();
 
     const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -325,8 +387,8 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
         throw new Error(`APIエラー ${res.status}: ${errData?.error?.message || res.statusText}`);
       }
 
-      const data = await res.json();
-      const text = data.content.map(i => i.text || '').join('');
+      const data      = await res.json();
+      const text      = data.content.map(i => i.text || '').join('');
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('JSONレスポンスが取得できませんでした');
       const parsed = JSON.parse(jsonMatch[0]);
@@ -339,51 +401,72 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       document.getElementById('f_date').value    = today;
       setRating(parsed.rating || 3);
       updateCount('f_summary', 'summaryCount');
-      updateCount('f_memo', 'memoCount');
+      updateCount('f_memo',    'memoCount');
 
       document.getElementById('resultCard').style.display = 'block';
-      document.getElementById('stamp').style.display = 'none';
-      document.getElementById('saveBtn').style.display = 'block';
-      document.getElementById('nextBtn').style.display = 'none';
+      document.getElementById('stamp').style.display      = 'none';
+      document.getElementById('saveBtn').style.display    = 'block';
+      document.getElementById('nextBtn').style.display    = 'none';
       enableFields(true);
+      onTitleInput(); // タイトルの状態でボタンを更新
 
     } catch(e) {
       showError('解析に失敗しました: ' + e.message);
+    } finally {
+      // 成功・失敗どちらでも必ず解除
+      btn.disabled    = false;
+      btn.textContent = '✦ 表紙を解析する';
+      btn.classList.remove('shimmer');
+      uploadArea.classList.remove('locked');
     }
-
-    btn.disabled = false;
-    btn.textContent = '✦ 表紙を解析する';
-    btn.classList.remove('shimmer');
   }
 
+  // ── 星評価 ────────────────────────────────────────────
   function setRating(n) {
     currentRating = n;
     document.querySelectorAll('.star').forEach((s, i) => {
       s.classList.toggle('active', i < n);
+      s.setAttribute('aria-checked', i < n ? 'true' : 'false');
     });
   }
 
+  // 星キーボード操作（←→で変更、Enter/Spaceで確定）
+  function onStarKeydown(e) {
+    if (['ArrowRight', 'ArrowLeft', 'Enter', ' '].includes(e.key)) {
+      e.preventDefault();
+      if (e.key === 'ArrowRight') setRating(Math.min(currentRating + 1, 5));
+      if (e.key === 'ArrowLeft')  setRating(Math.max(currentRating - 1, 1));
+    }
+  }
+
+  // ── フィールド有効/無効 ───────────────────────────────
   function enableFields(enabled) {
-    ['f_title', 'f_author', 'f_genre', 'f_summary', 'f_memo', 'f_date'].forEach(id => {
+    ['f_title', 'f_author', 'f_genre', 'f_summary', 'f_memo'].forEach(id => {
       document.getElementById(id).disabled = !enabled;
     });
+    // f_dateは常にreadonly（enabledに関わらず編集不可）
     document.querySelectorAll('.star').forEach(s => {
       s.classList.toggle('disabled', !enabled);
-      s.style.cursor = enabled ? 'pointer' : 'default';
+      s.setAttribute('tabindex', enabled ? '0' : '-1');
       s.onclick = enabled ? function() { setRating(parseInt(this.getAttribute('data-n'))); } : null;
     });
   }
 
+  // ── スプレッドシートへ登録 ────────────────────────────
   async function saveToSheet() {
-    if (!gasUrl) { showError('GAS WebアプリURLを入力してください'); return; }
+    if (isSaving) return;
+    const title = document.getElementById('f_title').value.trim();
+    if (!title)   { showError('タイトルを入力してください'); return; }
+    if (!gasUrl)  { showError('GAS WebアプリURLを入力してください'); return; }
 
-    const btn = document.getElementById('saveBtn');
-    btn.disabled = true;
+    isSaving = true;
+    const btn   = document.getElementById('saveBtn');
+    btn.disabled    = true;
     btn.textContent = '登録中…';
     clearError();
 
     const payload = {
-      title:   document.getElementById('f_title').value,
+      title,
       author:  document.getElementById('f_author').value,
       genre:   document.getElementById('f_genre').value,
       rating:  currentRating,
@@ -400,7 +483,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       if (!res.ok) throw new Error(`HTTPエラー: ${res.status}`);
       const json = await res.json();
       if (json.success) {
-        document.getElementById('stamp').style.display = 'block';
+        document.getElementById('stamp').style.display   = 'block';
         document.getElementById('saveBtn').style.display = 'none';
         document.getElementById('nextBtn').style.display = 'block';
         enableFields(false);
@@ -409,23 +492,30 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       }
     } catch(e) {
       showError('保存に失敗しました: ' + e.message);
-      btn.disabled = false;
+      btn.disabled    = false;
       btn.textContent = '📚 スプレッドシートに登録';
+    } finally {
+      isSaving = false;
     }
   }
 
+  // ── リセット ──────────────────────────────────────────
   function resetAll() {
     imageBase64 = null;
-    document.getElementById('fileInput').value = '';
-    document.getElementById('cameraInput').value = '';
+    isSaving    = false;
+
+    refreshFileInput('fileInput',   false);
+    refreshFileInput('cameraInput', true);
+
     document.getElementById('uploadPlaceholder').style.display = 'block';
-    document.getElementById('uploadPreview').style.display = 'none';
-    document.getElementById('uploadArea').classList.remove('has-image', 'dragging');
-    document.getElementById('analyzeBtn').style.display = 'none';
-    document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('uploadPreview').style.display     = 'none';
+    document.getElementById('uploadArea').classList.remove('has-image', 'dragging', 'locked');
+    document.getElementById('analyzeBtn').style.display        = 'none';
+    document.getElementById('resultCard').style.display        = 'none';
     clearError();
+    setRating(3);
     updateCount('f_summary', 'summaryCount');
-    updateCount('f_memo', 'memoCount');
+    updateCount('f_memo',    'memoCount');
   }
 </script>
 </body>
