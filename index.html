@@ -20,14 +20,16 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 .config-label span.badge { color: #c8952a; }
 .config-row { display: flex; gap: 0.5rem; }
 .config-box input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(200,149,42,0.2); border-radius: 3px; padding: 0.6rem 0.8rem; color: #d4b896; font-size: 0.78rem; font-family: inherit; }
-.config-box input:focus { outline: none; }
+.config-box input:focus { outline: none; border-color: rgba(200,149,42,0.5); }
 .config-box p { font-size: 0.72rem; color: #4a3820; margin-top: 0.5rem; }
-.upload-area { border: 2px dashed rgba(200,149,42,0.25); border-radius: 4px; padding: 3rem 2rem; text-align: center; cursor: pointer; background: rgba(0,0,0,0.2); transition: all 0.3s; margin-bottom: 1.2rem; position: relative; }
-.upload-area:hover { border-color: rgba(200,149,42,0.5); }
+.upload-area { border: 2px dashed rgba(200,149,42,0.25); border-radius: 4px; padding: 2.5rem 2rem; text-align: center; background: rgba(0,0,0,0.2); transition: all 0.3s; margin-bottom: 1.2rem; position: relative; }
 .upload-area.dragging { border-color: #c8952a; background: rgba(200,149,42,0.05); }
 .upload-area.has-image { padding: 1rem; }
 .upload-icon { font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.5; }
-.upload-text { color: #8a6a3a; font-size: 0.9rem; line-height: 1.6; }
+.upload-text { color: #8a6a3a; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem; }
+.upload-actions { display: flex; gap: 0.8rem; justify-content: center; }
+.upload-action-btn { background: rgba(200,149,42,0.1); border: 1px solid rgba(200,149,42,0.25); color: #8a6a3a; border-radius: 3px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: all 0.2s; }
+.upload-action-btn:hover { border-color: rgba(200,149,42,0.5); color: #c8952a; }
 .preview-img { max-height: 260px; max-width: 100%; border-radius: 2px; box-shadow: 4px 4px 20px rgba(0,0,0,0.6); }
 .remove-btn { position: absolute; top: -10px; right: -10px; background: #3a2010; border: 1px solid rgba(200,149,42,0.4); color: #c8952a; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
 .img-wrap { position: relative; display: inline-block; }
@@ -36,6 +38,8 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 .btn:disabled { background: rgba(200,149,42,0.2); color: #8a6a3a; box-shadow: none; cursor: wait; transform: none; }
 .btn-sm { background: rgba(200,149,42,0.2); border: 1px solid rgba(200,149,42,0.3); color: #c8952a; border-radius: 3px; padding: 0 1rem; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: all 0.2s; white-space: nowrap; }
 .btn-sm:hover { opacity: 0.85; }
+.error-box { background: rgba(180,40,40,0.1); border: 1px solid rgba(180,40,40,0.4); border-radius: 4px; padding: 0.8rem 1rem; margin-bottom: 1rem; color: #e07070; font-size: 0.82rem; line-height: 1.5; display: none; }
+.error-box.show { display: block; animation: fadeIn 0.3s ease; }
 .result-card { background: rgba(20,14,8,0.8); border: 1px solid rgba(200,149,42,0.3); border-radius: 4px; padding: 1.5rem; position: relative; animation: fadeIn 0.5s ease forwards; }
 @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
 @keyframes stamp { 0% { transform:scale(1.4) rotate(-8deg); opacity:0; } 100% { transform:scale(1) rotate(-8deg); opacity:1; } }
@@ -44,9 +48,10 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 .stamp { position: absolute; top: 16px; right: 16px; border: 3px solid #4a9a4a; color: #4a9a4a; padding: 4px 10px; border-radius: 2px; font-size: 0.7rem; letter-spacing: 0.15em; font-weight: bold; transform: rotate(-8deg); animation: stamp 0.4s cubic-bezier(0.22,0.61,0.36,1) forwards; }
 .card-title-label { font-family: 'Playfair Display', serif; font-size: 0.65rem; letter-spacing: 0.3em; color: #6a5030; text-transform: uppercase; margin-bottom: 1rem; }
 .field { margin-bottom: 1rem; }
-.field-label { font-size: 0.65rem; letter-spacing: 0.2em; color: #6a5030; text-transform: uppercase; margin-bottom: 0.3rem; }
+.field-label { font-size: 0.65rem; letter-spacing: 0.2em; color: #6a5030; text-transform: uppercase; margin-bottom: 0.3rem; display: flex; justify-content: space-between; align-items: baseline; }
+.char-count { font-size: 0.6rem; color: #4a3820; letter-spacing: 0; text-transform: none; }
 .field input, .field textarea { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(200,149,42,0.2); color: #d4b896; font-size: 0.9rem; padding: 0.3rem 0; font-family: inherit; resize: none; line-height: 1.6; }
-.field input:focus, .field textarea:focus { outline: none; }
+.field input:focus, .field textarea:focus { outline: none; border-bottom-color: rgba(200,149,42,0.5); }
 .field input.title-input { color: #e8c87a; font-size: 1.15rem; font-family: 'Playfair Display', serif; }
 .field input:disabled, .field textarea:disabled { border-bottom-color: transparent; }
 .stars { display: flex; gap: 4px; }
@@ -82,7 +87,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
       <button class="btn-sm" onclick="saveApiKey()">保存</button>
     </div>
-    <p>APIキーはこのブラウザにのみ保存されます（GitHubには載りません）</p>
+    <p>APIキーはセッション中のみ保持されます（タブを閉じると消去されます）</p>
   </div>
 
   <div class="config-box" id="configBox">
@@ -97,39 +102,46 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     <p>GAS「デプロイ」→「デプロイを管理」でURLをコピーして貼り付け</p>
   </div>
 
-  <div class="upload-area" id="uploadArea" onclick="triggerUpload()" ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
+  <div class="upload-area" id="uploadArea" ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
     <div id="uploadPlaceholder">
       <div class="upload-icon">📖</div>
-      <div class="upload-text">クリックまたはドロップで<br>本の表紙画像を追加</div>
+      <div class="upload-text">本の表紙画像を追加</div>
+      <div class="upload-actions">
+        <button class="upload-action-btn" onclick="triggerUpload()">📁 ファイルを選択</button>
+        <button class="upload-action-btn" onclick="triggerCamera()">📷 カメラで撮影</button>
+      </div>
     </div>
     <div id="uploadPreview" style="display:none">
       <div class="img-wrap">
         <img id="previewImg" class="preview-img" src="" alt="表紙">
-        <button class="remove-btn" onclick="event.stopPropagation(); resetAll()">✕</button>
+        <button class="remove-btn" onclick="resetAll()">✕</button>
       </div>
     </div>
   </div>
 
   <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="onFileChange(event)">
+  <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="onFileChange(event)">
   <button class="btn" id="analyzeBtn" style="display:none" onclick="analyze()">✦ 表紙を解析する</button>
+
+  <div class="error-box" id="errorBox"></div>
 
   <div class="result-card" id="resultCard" style="display:none">
     <div class="stamp" id="stamp" style="display:none">✓ 登録済</div>
     <div class="card-title-label">— Library Card —</div>
     <div class="field">
-      <div class="field-label">タイトル</div>
+      <div class="field-label"><span>タイトル</span></div>
       <input type="text" id="f_title" class="title-input">
     </div>
     <div class="field">
-      <div class="field-label">著者名</div>
+      <div class="field-label"><span>著者名</span></div>
       <input type="text" id="f_author">
     </div>
     <div class="field">
-      <div class="field-label">ジャンル</div>
+      <div class="field-label"><span>ジャンル</span></div>
       <input type="text" id="f_genre">
     </div>
     <div class="field">
-      <div class="field-label">評価</div>
+      <div class="field-label"><span>評価</span></div>
       <div class="stars" id="stars">
         <span class="star" data-n="1" onclick="setRating(1)">★</span>
         <span class="star" data-n="2" onclick="setRating(2)">★</span>
@@ -139,11 +151,21 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       </div>
     </div>
     <div class="field">
-      <div class="field-label">一言コメント</div>
-      <textarea id="f_comment" rows="2"></textarea>
+      <div class="field-label">
+        <span>要約</span>
+        <span class="char-count" id="summaryCount">0文字</span>
+      </div>
+      <textarea id="f_summary" rows="3" oninput="updateCount('f_summary','summaryCount')"></textarea>
     </div>
     <div class="field">
-      <div class="field-label">登録日</div>
+      <div class="field-label">
+        <span>読書メモ</span>
+        <span class="char-count" id="memoCount">0文字</span>
+      </div>
+      <textarea id="f_memo" rows="3" oninput="updateCount('f_memo','memoCount')"></textarea>
+    </div>
+    <div class="field">
+      <div class="field-label"><span>登録日</span></div>
       <input type="text" id="f_date">
     </div>
     <div class="btn-row">
@@ -157,15 +179,13 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 </div>
 
 <script>
-  // ── 状態管理 ──────────────────────────────────────────
   let currentRating = 3;
   let imageBase64 = null;
   let imageMime = 'image/jpeg';
 
-  let apiKey = localStorage.getItem('apiKey') || '';
+  let apiKey = sessionStorage.getItem('apiKey') || '';
   let gasUrl = localStorage.getItem('gasUrl') || '';
 
-  // ── 初期化 ────────────────────────────────────────────
   window.onload = () => {
     if (apiKey) {
       document.getElementById('apiKeyInput').value = apiKey;
@@ -179,12 +199,11 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     }
   };
 
-  // ── 設定保存 ──────────────────────────────────────────
   function saveApiKey() {
     const val = document.getElementById('apiKeyInput').value.trim();
     if (val) {
       apiKey = val;
-      localStorage.setItem('apiKey', apiKey);
+      sessionStorage.setItem('apiKey', apiKey);
       document.getElementById('apiSavedBadge').style.display = 'inline';
       document.getElementById('apiBox').classList.add('saved');
     }
@@ -200,10 +219,25 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     }
   }
 
-  // ── 画像アップロード ──────────────────────────────────
-  function triggerUpload() {
-    if (!imageBase64) document.getElementById('fileInput').click();
+  function updateCount(fieldId, countId) {
+    const len = document.getElementById(fieldId).value.length;
+    document.getElementById(countId).textContent = len + '文字';
   }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = '⚠ ' + msg;
+    box.classList.add('show');
+  }
+  function clearError() {
+    const box = document.getElementById('errorBox');
+    box.textContent = '';
+    box.classList.remove('show');
+  }
+
+  function triggerUpload() { document.getElementById('fileInput').click(); }
+  function triggerCamera() { document.getElementById('cameraInput').click(); }
+
   function onDragOver(e) {
     e.preventDefault();
     document.getElementById('uploadArea').classList.add('dragging');
@@ -221,15 +255,12 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     if (e.target.files[0]) loadFile(e.target.files[0]);
   }
 
-  // ── ✅ 画像リサイズ（スマホ対応）────────────────────────
   function loadFile(file) {
     if (!file.type.startsWith('image/')) return;
-    imageMime = file.type;
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        // 長辺1000px以下にリサイズ
         const MAX = 1000;
         let w = img.width, h = img.height;
         if (w > MAX || h > MAX) {
@@ -247,23 +278,23 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
         document.getElementById('uploadPlaceholder').style.display = 'none';
         document.getElementById('uploadPreview').style.display = 'block';
         document.getElementById('uploadArea').classList.add('has-image');
-        document.getElementById('uploadArea').style.cursor = 'default';
         document.getElementById('analyzeBtn').style.display = 'block';
         document.getElementById('resultCard').style.display = 'none';
+        clearError();
       };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   }
 
-  // ── 表紙解析（Claude Vision API）────────────────────────
   async function analyze() {
-    if (!apiKey) { alert('APIキーを入力・保存してください'); return; }
+    if (!apiKey) { showError('APIキーを入力・保存してください'); return; }
 
     const btn = document.getElementById('analyzeBtn');
     btn.disabled = true;
     btn.textContent = '🔍 表紙を解析しています…';
     btn.classList.add('shimmer');
+    clearError();
 
     const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
@@ -277,13 +308,13 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
           'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-5',  // ✅ 最新モデル名
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           messages: [{
             role: 'user',
             content: [
               { type: 'image', source: { type: 'base64', media_type: imageMime, data: imageBase64 } },
-              { type: 'text', text: `この本の表紙画像を見て、以下のJSON形式のみで回答してください。前置きや説明は不要です。\n{"title":"","author":"","genre":"","rating":3,"comment":"","date":"${today}"}\n不明な項目は空文字にしてください。ratingは1〜5の整数にしてください。` }
+              { type: 'text', text: `この本の表紙画像を分析し、以下のJSON形式のみで回答してください。前置き・説明・Markdownコードブロックは不要です。JSONのみ出力してください。\n{"title":"","author":"","genre":"","rating":3,"summary":"","memo":""}\n- title: 本のタイトル（不明なら空文字）\n- author: 著者名（不明なら空文字）\n- genre: ジャンル（例：小説、ビジネス、自己啓発、技術書、歴史など）\n- rating: 表紙の印象から1〜5の整数\n- summary: タイトルや表紙から推測できる内容を1〜2文で要約\n- memo: 読む前の期待や気になる点を1文で` }
             ]
           }]
         })
@@ -296,8 +327,6 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 
       const data = await res.json();
       const text = data.content.map(i => i.text || '').join('');
-
-      // ✅ JSONパース堅牢化
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('JSONレスポンスが取得できませんでした');
       const parsed = JSON.parse(jsonMatch[0]);
@@ -305,9 +334,12 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       document.getElementById('f_title').value   = parsed.title   || '';
       document.getElementById('f_author').value  = parsed.author  || '';
       document.getElementById('f_genre').value   = parsed.genre   || '';
-      document.getElementById('f_comment').value = parsed.comment || '';
-      document.getElementById('f_date').value    = parsed.date    || today;
+      document.getElementById('f_summary').value = parsed.summary || '';
+      document.getElementById('f_memo').value    = parsed.memo    || '';
+      document.getElementById('f_date').value    = today;
       setRating(parsed.rating || 3);
+      updateCount('f_summary', 'summaryCount');
+      updateCount('f_memo', 'memoCount');
 
       document.getElementById('resultCard').style.display = 'block';
       document.getElementById('stamp').style.display = 'none';
@@ -316,7 +348,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       enableFields(true);
 
     } catch(e) {
-      alert('解析に失敗しました。\n' + e.message);  // ✅ エラー詳細表示
+      showError('解析に失敗しました: ' + e.message);
     }
 
     btn.disabled = false;
@@ -324,7 +356,6 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     btn.classList.remove('shimmer');
   }
 
-  // ── 星評価 ────────────────────────────────────────────
   function setRating(n) {
     currentRating = n;
     document.querySelectorAll('.star').forEach((s, i) => {
@@ -332,47 +363,41 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     });
   }
 
-  // ── フィールド有効/無効 ───────────────────────────────
   function enableFields(enabled) {
-    ['f_title', 'f_author', 'f_genre', 'f_comment', 'f_date'].forEach(id => {
+    ['f_title', 'f_author', 'f_genre', 'f_summary', 'f_memo', 'f_date'].forEach(id => {
       document.getElementById(id).disabled = !enabled;
     });
-    // ✅ data-nはHTML側に静的定義済みなのでここでは触らない
     document.querySelectorAll('.star').forEach(s => {
       s.classList.toggle('disabled', !enabled);
       s.style.cursor = enabled ? 'pointer' : 'default';
-      s.onclick = enabled
-        ? function() { setRating(parseInt(this.getAttribute('data-n'))); }
-        : null;
+      s.onclick = enabled ? function() { setRating(parseInt(this.getAttribute('data-n'))); } : null;
     });
   }
 
-  // ── スプレッドシートへ登録（POST方式・Safari対応）──────
   async function saveToSheet() {
-    if (!gasUrl) { alert('GAS WebアプリURLを入力してください'); return; }
+    if (!gasUrl) { showError('GAS WebアプリURLを入力してください'); return; }
 
     const btn = document.getElementById('saveBtn');
     btn.disabled = true;
     btn.textContent = '登録中…';
+    clearError();
 
     const payload = {
       title:   document.getElementById('f_title').value,
       author:  document.getElementById('f_author').value,
       genre:   document.getElementById('f_genre').value,
       rating:  currentRating,
-      comment: document.getElementById('f_comment').value,
+      summary: document.getElementById('f_summary').value,
+      memo:    document.getElementById('f_memo').value,
       date:    document.getElementById('f_date').value,
     };
 
     try {
-      // ✅ GETからPOSTに変更（SafariのURL長さ制限を回避）
       const res = await fetch(gasUrl, {
         method: 'POST',
         body: JSON.stringify(payload),
       });
-
       if (!res.ok) throw new Error(`HTTPエラー: ${res.status}`);
-
       const json = await res.json();
       if (json.success) {
         document.getElementById('stamp').style.display = 'block';
@@ -383,22 +408,24 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
         throw new Error(json.error || '不明なエラー');
       }
     } catch(e) {
-      alert('保存に失敗しました。\n' + e.message);  // ✅ エラー詳細表示
+      showError('保存に失敗しました: ' + e.message);
       btn.disabled = false;
       btn.textContent = '📚 スプレッドシートに登録';
     }
   }
 
-  // ── リセット ──────────────────────────────────────────
   function resetAll() {
     imageBase64 = null;
     document.getElementById('fileInput').value = '';
+    document.getElementById('cameraInput').value = '';
     document.getElementById('uploadPlaceholder').style.display = 'block';
     document.getElementById('uploadPreview').style.display = 'none';
-    document.getElementById('uploadArea').classList.remove('has-image');
-    document.getElementById('uploadArea').style.cursor = 'pointer';
+    document.getElementById('uploadArea').classList.remove('has-image', 'dragging');
     document.getElementById('analyzeBtn').style.display = 'none';
     document.getElementById('resultCard').style.display = 'none';
+    clearError();
+    updateCount('f_summary', 'summaryCount');
+    updateCount('f_memo', 'memoCount');
   }
 </script>
 </body>
