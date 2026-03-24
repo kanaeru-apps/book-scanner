@@ -376,7 +376,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
             role: 'user',
             content: [
               { type: 'image', source: { type: 'base64', media_type: imageMime, data: imageBase64 } },
-              { type: 'text', text: `この本の表紙画像を分析し、以下のJSON形式のみで回答してください。前置き・説明・Markdownコードブロックは不要です。JSONのみ出力してください。\n{"title":"","author":"","genre":"","rating":3,"summary":"","memo":""}\n- title: 本のタイトル（不明なら空文字）\n- author: 著者名（不明なら空文字）\n- genre: ジャンル（例：小説、ビジネス、自己啓発、技術書、歴史など）\n- rating: 表紙の印象から1〜5の整数\n- summary: タイトルや表紙から推測できる内容を1〜2文で要約\n- memo: 読む前の期待や気になる点を1文で` }
+              { type: 'text', text: `この本の表紙画像を分析し、以下のJSON形式のみで回答してください。前置き・説明・Markdownコードブロックは不要です。JSONのみ出力してください。\n{"title":"","author":"","genre":"","rating":3,"summary":"","memo":""}\n- title: 本のタイトル（不明なら空文字）\n- author: 著者名（不明なら空文字）\n- genre: ジャンル（例：小説、ビジネス、自己啓発、技術書、歴史など）\n- rating: 表紙の印象から1〜5の整数\n- summary: タイトルや表紙から推測できる内容を1〜2文で要約\n- memo: 必ず空文字で返してください` }
             ]
           }]
         })
@@ -397,7 +397,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       document.getElementById('f_author').value  = parsed.author  || '';
       document.getElementById('f_genre').value   = parsed.genre   || '';
       document.getElementById('f_summary').value = parsed.summary || '';
-      document.getElementById('f_memo').value    = parsed.memo    || '';
+      document.getElementById('f_memo').value    = '';
       document.getElementById('f_date').value    = today;
       setRating(parsed.rating || 3);
       updateCount('f_summary', 'summaryCount');
