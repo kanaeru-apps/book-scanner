@@ -136,7 +136,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       <input type="password" id="apiKeyInput" placeholder="sk-ant-..." onkeydown="if(event.key==='Enter') saveApiKey()">
       <button class="btn-sm" onclick="saveApiKey()">保存</button>
     </div>
-    <p>APIキーはセッション中のみ保持されます（タブを閉じると消去されます）</p>
+    <p>APIキーはこのデバイスのブラウザに保存されます</p>
   </div>
 
   <div class="config-box" id="configBox">
@@ -289,8 +289,8 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   let selectedFolderUrl = '';
   const pageImages     = { inline: [], add: [] };
 
-  let apiKey = sessionStorage.getItem('apiKey') || '';
-  let gasUrl = localStorage.getItem('gasUrl')   || '';
+  let apiKey = localStorage.getItem('apiKey') || '';
+  let gasUrl = localStorage.getItem('gasUrl') || '';
 
   // ── 初期化 ────────────────────────────────────────────
   window.onload = () => {
@@ -322,7 +322,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     const val = document.getElementById('apiKeyInput').value.trim();
     if (val) {
       apiKey = val;
-      sessionStorage.setItem('apiKey', apiKey);
+      localStorage.setItem('apiKey', apiKey);
       document.getElementById('apiSavedBadge').style.display = 'inline';
       document.getElementById('apiBox').classList.add('saved');
     }
