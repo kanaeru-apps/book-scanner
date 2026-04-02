@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Book Scanner</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8952a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BookScan">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { min-height: 100vh; background: #1c1510; background-image: radial-gradient(ellipse at 20% 10%, rgba(120,80,20,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 90%, rgba(80,40,10,0.2) 0%, transparent 60%); font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif; color: #d4b896; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+.container { width: 100%; max-width: 520px; }
+.header { text-align: center; margin-bottom: 2rem; }
+.header-sub { font-family: 'Playfair Display', Georgia, serif; font-size: 0.7rem; letter-spacing: 0.4em; color: #8a6a3a; text-transform: uppercase; margin-bottom: 0.5rem; }
+.header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2.2rem; font-weight: 700; color: #e8c87a; text-shadow: 0 2px 20px rgba(200,149,42,0.3); }
+.divider { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, #8a6a3a, transparent); margin: 0.8rem auto; }
+.header p { color: #6a5030; font-size: 0.85rem; font-style: italic; }
+.tab-bar { display: flex; margin-bottom: 1.5rem; border: 1px solid rgba(200,149,42,0.2); border-radius: 4px; overflow: hidden; }
+.tab-btn { flex: 1; padding: 0.7rem; background: transparent; border: none; color: #6a5030; font-family: inherit; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+.tab-btn.active { background: rgba(200,149,42,0.15); color: #e8c87a; }
+.tab-btn:hover:not(.active) { background: rgba(200,149,42,0.05); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.config-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(200,149,42,0.15); border-radius: 4px; padding: 1.2rem; margin-bottom: 1.5rem; transition: border 0.3s; }
+.config-box.saved { border-color: rgba(200,149,42,0.5); }
+.config-label { font-size: 0.7rem; letter-spacing: 0.2em; color: #8a6a3a; text-transform: uppercase; margin-bottom: 0.8rem; display: flex; justify-content: space-between; }
+.config-label span.badge { color: #c8952a; }
+.config-row { display: flex; gap: 0.5rem; }
+.config-box input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(200,149,42,0.2); border-radius: 3px; padding: 0.6rem 0.8rem; color: #d4b896; font-size: 0.78rem; font-family: inherit; }
+.config-box input:focus { outline: none; border-color: rgba(200,149,42,0.5); }
+.config-box p { font-size: 0.72rem; color: #4a3820; margin-top: 0.5rem; }
+.upload-area { border: 2px dashed rgba(200,149,42,0.25); border-radius: 4px; padding: 2.5rem 2rem; text-align: center; background: rgba(0,0,0,0.2); transition: all 0.3s; margin-bottom: 1.2rem; position: relative; }
+.upload-area.dragging { border-color: #c8952a; background: rgba(200,149,42,0.05); }
+.upload-area.has-image { padding: 1rem; }
+.upload-area.locked { pointer-events: none; opacity: 0.7; }
+.upload-icon { font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.5; }
+.upload-text { color: #8a6a3a; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.2rem; }
+.upload-actions { display: flex; gap: 0.8rem; justify-content: center; }
+.upload-action-btn { background: rgba(200,149,42,0.1); border: 1px solid rgba(200,149,42,0.25); color: #8a6a3a; border-radius: 3px; padding: 0.65rem 1.2rem; cursor: pointer; font-size: 0.85rem; font-family: inherit; transition: all 0.2s; min-width: 120px; }
+.upload-action-btn:hover { border-color: rgba(200,149,42,0.5); color: #c8952a; }
+.preview-img { max-height: 260px; max-width: 100%; border-radius: 2px; box-shadow: 4px 4px 20px rgba(0,0,0,0.6); }
+.remove-btn { position: absolute; top: -10px; right: -10px; background: #3a2010; border: 1px solid rgba(200,149,42,0.4); color: #c8952a; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
+.img-wrap { position: relative; display: inline-block; }
+.btn { width: 100%; padding: 0.9rem; border: none; border-radius: 3px; background: linear-gradient(135deg, #c8952a, #e8c87a, #c8952a); color: #1c1510; font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 20px rgba(200,149,42,0.3); letter-spacing: 0.05em; transition: all 0.2s; }
+.btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn:disabled { background: rgba(200,149,42,0.2); color: #8a6a3a; box-shadow: none; cursor: not-allowed; transform: none; pointer-events: none; }
+.btn-sm { background: rgba(200,149,42,0.2); border: 1px solid rgba(200,149,42,0.3); color: #c8952a; border-radius: 3px; padding: 0 1rem; cursor: pointer; font-size: 0.8rem; font-family: inherit; transition: all 0.2s; white-space: nowrap; }
+.btn-sm:hover { opacity: 0.85; }
+.error-box { background: rgba(180,40,40,0.1); border: 1px solid rgba(180,40,40,0.4); border-radius: 4px; padding: 0.8rem 1rem; margin-bottom: 1rem; color: #e07070; font-size: 0.82rem; line-height: 1.5; display: none; }
+.error-box.show { display: block; animation: fadeIn 0.3s ease; }
+.success-box { background: rgba(40,120,40,0.1); border: 1px solid rgba(74,154,74,0.4); border-radius: 4px; padding: 0.8rem 1rem; margin-bottom: 1rem; color: #4a9a4a; font-size: 0.82rem; line-height: 1.5; display: none; }
+.success-box.show { display: block; animation: fadeIn 0.3s ease; }
+.result-card { background: rgba(20,14,8,0.8); border: 1px solid rgba(200,149,42,0.3); border-radius: 4px; padding: 1.5rem; position: relative; animation: fadeIn 0.5s ease forwards; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes stamp { 0% { transform:scale(1.4) rotate(-8deg); opacity:0; } 100% { transform:scale(1) rotate(-8deg); opacity:1; } }
+@keyframes shimmer { 0%,100% { opacity:0.6; } 50% { opacity:1; } }
+.shimmer { animation: shimmer 1.5s ease infinite; }
+.stamp { position: absolute; top: 16px; right: 16px; border: 3px solid #4a9a4a; color: #4a9a4a; padding: 4px 10px; border-radius: 2px; font-size: 0.7rem; letter-spacing: 0.15em; font-weight: bold; transform: rotate(-8deg); animation: stamp 0.4s cubic-bezier(0.22,0.61,0.36,1) forwards; }
+.card-title-label { font-family: 'Playfair Display', Georgia, serif; font-size: 0.65rem; letter-spacing: 0.3em; color: #6a5030; text-transform: uppercase; margin-bottom: 1rem; }
+.field { margin-bottom: 1rem; }
+.field-label { font-size: 0.65rem; letter-spacing: 0.2em; color: #6a5030; text-transform: uppercase; margin-bottom: 0.3rem; display: flex; justify-content: space-between; align-items: baseline; }
+.char-count { font-size: 0.6rem; color: #4a3820; letter-spacing: 0; text-transform: none; }
+.field input, .field textarea { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(200,149,42,0.2); color: #d4b896; font-size: 0.9rem; padding: 0.3rem 0; font-family: inherit; resize: none; line-height: 1.6; }
+.field input:focus, .field textarea:focus { outline: none; border-bottom-color: rgba(200,149,42,0.5); }
+.field input.title-input { color: #e8c87a; font-size: 1.15rem; font-family: 'Playfair Display', Georgia, serif; }
+.field input:disabled, .field textarea:disabled { border-bottom-color: transparent; }
+.field input:disabled::placeholder, .field textarea:disabled::placeholder { color: transparent; }
+#f_date { color: #6a5030; font-size: 0.8rem; cursor: default; }
+.stars { display: flex; gap: 4px; }
+.star { font-size: 24px; cursor: pointer; transition: color 0.15s; color: #3a2f1e; user-select: none; }
+.star:focus { outline: 2px solid rgba(200,149,42,0.5); border-radius: 2px; }
+.star.active { color: #c8952a; text-shadow: 0 0 8px rgba(200,149,42,0.5); }
+.star.disabled { cursor: default; pointer-events: none; }
+.btn-save.invalid { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.btn-row { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+.btn-reset { flex: 1; padding: 0.7rem; background: transparent; border: 1px solid rgba(200,149,42,0.2); color: #6a5030; border-radius: 3px; cursor: pointer; font-size: 0.85rem; font-family: inherit; transition: all 0.2s; }
+.btn-reset:hover { opacity: 0.85; }
+.btn-save { flex: 2; padding: 0.7rem; background: linear-gradient(135deg, #c8952a, #e8c87a); border: none; border-radius: 3px; color: #1c1510; font-weight: bold; font-size: 0.9rem; cursor: pointer; font-family: 'Playfair Display', Georgia, serif; transition: all 0.2s; }
+.btn-save:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; pointer-events: none; }
+.btn-next { flex: 2; padding: 0.7rem; background: rgba(74,154,74,0.15); border: 1px solid rgba(74,154,74,0.3); color: #4a9a4a; border-radius: 3px; cursor: pointer; font-size: 0.85rem; font-family: inherit; transition: all 0.2s; }
+.btn-next:hover { opacity: 0.85; }
+.btn-upload-pages { width: 100%; margin-top: 0.8rem; padding: 0.7rem; background: rgba(100,80,200,0.15); border: 1px solid rgba(100,80,200,0.3); color: #a090e0; border-radius: 3px; cursor: pointer; font-size: 0.85rem; font-family: inherit; transition: all 0.2s; }
+.btn-upload-pages:hover { opacity: 0.85; }
+.upload-panel { background: rgba(20,14,8,0.8); border: 1px solid rgba(100,80,200,0.3); border-radius: 4px; padding: 1.5rem; margin-top: 1rem; animation: fadeIn 0.4s ease; }
+.upload-panel-title { font-family: 'Playfair Display', Georgia, serif; font-size: 0.65rem; letter-spacing: 0.3em; color: #6a5030; text-transform: uppercase; margin-bottom: 1rem; }
+.upload-panel-book { color: #e8c87a; font-size: 0.9rem; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid rgba(200,149,42,0.15); }
+.page-images-area { border: 2px dashed rgba(100,80,200,0.25); border-radius: 4px; padding: 1.5rem; text-align: center; background: rgba(0,0,0,0.2); transition: all 0.3s; margin-bottom: 1rem; cursor: pointer; }
+.page-images-area:hover { border-color: rgba(100,80,200,0.5); }
+.page-images-area.dragging { border-color: #a090e0; background: rgba(100,80,200,0.05); }
+.page-thumbs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.page-thumb { position: relative; width: 80px; height: 80px; }
+.page-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 3px; border: 1px solid rgba(200,149,42,0.2); }
+.page-thumb-remove { position: absolute; top: -6px; right: -6px; background: #3a2010; border: 1px solid rgba(200,149,42,0.4); color: #c8952a; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; }
+.btn-do-upload { width: 100%; padding: 0.7rem; background: linear-gradient(135deg, #6050c8, #a090e0); border: none; border-radius: 3px; color: #fff; font-weight: bold; font-size: 0.9rem; cursor: pointer; font-family: 'Playfair Display', Georgia, serif; transition: all 0.2s; }
+.btn-do-upload:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn-do-upload:disabled { opacity: 0.5; cursor: not-allowed; transform: none; pointer-events: none; }
+.book-list { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; max-height: 320px; overflow-y: auto; }
+.book-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(200,149,42,0.15); border-radius: 4px; padding: 0.8rem 1rem; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+.book-item:hover:not(.no-folder) { border-color: rgba(200,149,42,0.4); background: rgba(200,149,42,0.05); }
+.book-item.selected { border-color: rgba(100,80,200,0.5); background: rgba(100,80,200,0.08); }
+.book-item.no-folder { opacity: 0.4; cursor: not-allowed; }
+.book-item-title { color: #e8c87a; font-size: 0.9rem; }
+.book-item-author { color: #6a5030; font-size: 0.75rem; margin-top: 0.2rem; }
+.book-item-icon { color: #4a9a4a; font-size: 0.8rem; }
+.btn-load-books { width: 100%; padding: 0.7rem; background: rgba(200,149,42,0.1); border: 1px solid rgba(200,149,42,0.25); color: #8a6a3a; border-radius: 3px; cursor: pointer; font-size: 0.85rem; font-family: inherit; transition: all 0.2s; margin-bottom: 1rem; }
+.btn-load-books:hover { border-color: rgba(200,149,42,0.5); color: #c8952a; }
+.btn-load-books:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+.progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; margin: 0.5rem 0; overflow: hidden; display: none; }
+.progress-bar.show { display: block; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #6050c8, #a090e0); border-radius: 2px; transition: width 0.3s; }
+.footer { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; color: #3a2810; }
+.log-copy-btn { margin-top: 0.8rem; padding: 0.4rem 1rem; background: transparent; border: 1px solid rgba(200,149,42,0.15); color: #4a3820; border-radius: 3px; cursor: pointer; font-size: 0.7rem; font-family: inherit; transition: all 0.2s; }
+.log-copy-btn:hover { border-color: rgba(200,149,42,0.4); color: #8a6a3a; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-sub">Personal Library</div>
+    <h1>Book Scanner</h1>
+    <div class="divider"></div>
+    <p>表紙を読み取り、蔵書リストへ自動登録</p>
+  </div>
+
+  <div class="config-box" id="apiBox">
+    <div class="config-label">
+      <span>🔑 Anthropic APIキー</span>
+      <span class="badge" id="apiSavedBadge" style="display:none">✦ 設定済み</span>
+    </div>
+    <div class="config-row">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." onkeydown="if(event.key==='Enter') saveApiKey()">
+      <button class="btn-sm" onclick="saveApiKey()">保存</button>
+    </div>
+    <p>APIキーはこのデバイスのブラウザに保存されます</p>
+  </div>
+
+  <div class="config-box" id="configBox">
+    <div class="config-label">
+      <span>🔗 GAS WebアプリURL</span>
+      <span class="badge" id="savedBadge" style="display:none">✦ 設定済み</span>
+    </div>
+    <div class="config-row">
+      <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/..." onkeydown="if(event.key==='Enter') saveUrl()">
+      <button class="btn-sm" onclick="saveUrl()">保存</button>
+    </div>
+    <p>GAS「デプロイ」→「デプロイを管理」でURLをコピーして貼り付け</p>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="register" onclick="switchTab('register')">📖 新規登録</button>
+    <button class="tab-btn" data-tab="addimage" onclick="switchTab('addimage')">🖼 画像を追加</button>
+  </div>
+
+  <!-- ── 新規登録タブ ── -->
+  <div class="tab-content active" id="tab-register">
+    <div class="upload-area" id="uploadArea" ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
+      <div id="uploadPlaceholder">
+        <div class="upload-icon">📖</div>
+        <div class="upload-text">本の表紙画像を追加</div>
+        <div class="upload-actions">
+          <button class="upload-action-btn" onclick="triggerUpload()">📁 ファイルを選択</button>
+          <button class="upload-action-btn" onclick="triggerCamera()">📷 カメラで撮影</button>
+        </div>
+      </div>
+      <div id="uploadPreview" style="display:none">
+        <div class="img-wrap">
+          <img id="previewImg" class="preview-img" src="" alt="表紙">
+          <button class="remove-btn" onclick="resetAll()">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="onFileChange(event)">
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="onFileChange(event)">
+
+    <button class="btn" id="analyzeBtn" style="display:none" onclick="analyze()">✦ 表紙を解析する</button>
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="result-card" id="resultCard" style="display:none">
+      <div class="stamp" id="stamp" style="display:none">✓ 登録済</div>
+      <div class="card-title-label">— Library Card —</div>
+      <div class="field">
+        <div class="field-label"><span>タイトル</span></div>
+        <input type="text" id="f_title" class="title-input" oninput="onTitleInput()" onkeydown="if(event.key==='Enter') document.getElementById('f_author').focus()">
+      </div>
+      <div class="field">
+        <div class="field-label"><span>著者名</span></div>
+        <input type="text" id="f_author" onkeydown="if(event.key==='Enter') document.getElementById('f_genre').focus()">
+      </div>
+      <div class="field">
+        <div class="field-label"><span>ジャンル</span></div>
+        <input type="text" id="f_genre">
+      </div>
+      <div class="field">
+        <div class="field-label"><span>評価</span></div>
+        <div class="stars" id="stars" role="radiogroup" aria-label="評価">
+          <span class="star" data-n="1" onclick="setRating(1)" tabindex="0" role="radio" aria-label="1">★</span>
+          <span class="star" data-n="2" onclick="setRating(2)" tabindex="0" role="radio" aria-label="2">★</span>
+          <span class="star" data-n="3" onclick="setRating(3)" tabindex="0" role="radio" aria-label="3">★</span>
+          <span class="star" data-n="4" onclick="setRating(4)" tabindex="0" role="radio" aria-label="4">★</span>
+          <span class="star" data-n="5" onclick="setRating(5)" tabindex="0" role="radio" aria-label="5">★</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>要約</span><span class="char-count" id="summaryCount">0文字</span></div>
+        <textarea id="f_summary" rows="3" oninput="updateCount('f_summary','summaryCount')"></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>読書メモ</span><span class="char-count" id="memoCount">0文字</span></div>
+        <textarea id="f_memo" rows="3" oninput="updateCount('f_memo','memoCount')"></textarea>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>登録日</span></div>
+        <input type="text" id="f_date" readonly tabindex="-1">
+      </div>
+      <div class="btn-row">
+        <button class="btn-reset" onclick="resetAll()">リセット</button>
+        <button class="btn-save" id="saveBtn" onclick="saveToSheet()">📚 スプレッドシートに登録</button>
+        <button class="btn-next" id="nextBtn" style="display:none" onclick="resetAll()">＋ 次の本を登録</button>
+      </div>
+      <button class="btn-upload-pages" id="btnUploadPages" style="display:none" onclick="showInlineUpload()">🖼 ページ画像をドライブに追加</button>
+      <div id="inlineUploadPanel" style="display:none">
+        <div class="upload-panel">
+          <div class="upload-panel-title">— Page Images —</div>
+          <div class="upload-panel-book" id="inlineBookTitle"></div>
+          <div id="inlinePageThumbs" class="page-thumbs"></div>
+          <div class="page-images-area" id="inlineDropArea"
+               onclick="triggerPageInput('inlinePageInput')"
+               ondragover="onPageDragOver(event,'inlineDropArea')"
+               ondragleave="onPageDragLeave('inlineDropArea')"
+               ondrop="onPageDrop(event,'inlineDropArea','inline')">
+            <div style="color:#6a5030; font-size:0.85rem;">クリックまたはドロップで画像を追加（複数可）</div>
+          </div>
+          <input type="file" id="inlinePageInput" accept="image/*" multiple style="display:none" onchange="onPageFileChange(event,'inline','inlinePageThumbs')">
+          <div class="progress-bar" id="inlineProgress"><div class="progress-fill" id="inlineProgressFill" style="width:0%"></div></div>
+          <div class="error-box" id="inlineErrorBox"></div>
+          <div class="success-box" id="inlineSuccessBox"></div>
+          <button class="btn-do-upload" id="inlineUploadBtn" onclick="uploadPageImages('inline')">📤 ドライブにアップロード</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 画像追加タブ ── -->
+  <div class="tab-content" id="tab-addimage">
+    <button class="btn-load-books" id="btnLoadBooks" onclick="loadBookList()">📚 登録済みの本を読み込む</button>
+    <div class="error-box" id="listErrorBox"></div>
+    <div id="bookListArea" style="display:none">
+      <div class="book-list" id="bookList"></div>
+      <div id="addImagePanel" style="display:none">
+        <div class="upload-panel">
+          <div class="upload-panel-title">— Page Images —</div>
+          <div class="upload-panel-book" id="addImageBookTitle"></div>
+          <div id="addImageThumbs" class="page-thumbs"></div>
+          <div class="page-images-area" id="addDropArea"
+               onclick="triggerPageInput('addPageInput')"
+               ondragover="onPageDragOver(event,'addDropArea')"
+               ondragleave="onPageDragLeave('addDropArea')"
+               ondrop="onPageDrop(event,'addDropArea','add')">
+            <div style="color:#6a5030; font-size:0.85rem;">クリックまたはドロップで画像を追加（複数可）</div>
+          </div>
+          <input type="file" id="addPageInput" accept="image/*" multiple style="display:none" onchange="onPageFileChange(event,'add','addImageThumbs')">
+          <div class="progress-bar" id="addProgress"><div class="progress-fill" id="addProgressFill" style="width:0%"></div></div>
+          <div class="error-box" id="addErrorBox"></div>
+          <div class="success-box" id="addSuccessBox"></div>
+          <button class="btn-do-upload" id="addUploadBtn" onclick="uploadPageImages('add')">📤 ドライブにアップロード</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Powered by Claude Vision × Google Sheets</div>
+  <div style="text-align:center">
+    <button class="log-copy-btn" id="copyLogBtn" onclick="copyLog()">📋 ログをコピー</button>
+  </div>
+</div>
+
+<script>
+  // ── 状態管理 ──────────────────────────────────────────
+  let currentRating    = 3;
+  let imageBase64      = null;
+  let imageMime        = 'image/jpeg';
+  let isSaving         = false;
+  let isLoadingBooks   = false;
+  let currentFolderUrl = '';
+  let currentBookTitle = '';
+  let selectedFolderUrl = '';
+  const pageImages     = { inline: [], add: [] };
+
+  let apiKey = localStorage.getItem('apiKey') || '';
+  let gasUrl = localStorage.getItem('gasUrl') || '';
+
+  // ── ログ管理 ──────────────────────────────────────────
+  const appLogs = [];
+  function appLog(msg, level = 'info') {
+    const t = new Date().toLocaleTimeString('ja-JP');
+    if (appLogs.length >= 500) appLogs.shift();
+    appLogs.push(`[${t}] [${level.toUpperCase()}] ${msg}`);
+  }
+
+  // ── 初期化 ────────────────────────────────────────────
+  window.onload = () => {
+    if (apiKey) {
+      document.getElementById('apiKeyInput').value = apiKey;
+      document.getElementById('apiSavedBadge').style.display = 'inline';
+      document.getElementById('apiBox').classList.add('saved');
+    }
+    if (gasUrl) {
+      document.getElementById('gasUrlInput').value = gasUrl;
+      document.getElementById('savedBadge').style.display = 'inline';
+      document.getElementById('configBox').classList.add('saved');
+    }
+    document.getElementById('stars').addEventListener('keydown', onStarKeydown);
+  };
+
+  // ── タブ切り替え（data-tab属性で判定） ───────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => {
+      c.classList.toggle('active', c.id === 'tab-' + tab);
+    });
+  }
+
+  // ── 設定保存 ──────────────────────────────────────────
+  function saveApiKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (val) {
+      apiKey = val;
+      localStorage.setItem('apiKey', apiKey);
+      document.getElementById('apiSavedBadge').style.display = 'inline';
+      document.getElementById('apiBox').classList.add('saved');
+    }
+  }
+  function saveUrl() {
+    const val = document.getElementById('gasUrlInput').value.trim();
+    if (val) {
+      gasUrl = val;
+      localStorage.setItem('gasUrl', gasUrl);
+      document.getElementById('savedBadge').style.display = 'inline';
+      document.getElementById('configBox').classList.add('saved');
+    }
+  }
+
+  // ── ユーティリティ ────────────────────────────────────
+  function updateCount(fieldId, countId) {
+    document.getElementById(countId).textContent = document.getElementById(fieldId).value.length + '文字';
+  }
+  function showError(boxId, msg) {
+    const box = document.getElementById(boxId);
+    box.textContent = '⚠ ' + msg; box.classList.add('show');
+    appLog(msg, 'error');
+  }
+  function clearError(boxId) {
+    const box = document.getElementById(boxId);
+    box.textContent = ''; box.classList.remove('show');
+  }
+  function showSuccess(boxId, msg) {
+    const box = document.getElementById(boxId);
+    box.textContent = '✓ ' + msg; box.classList.add('show');
+    appLog(msg, 'success');
+  }
+  function clearSuccess(boxId) {
+    const box = document.getElementById(boxId);
+    box.textContent = ''; box.classList.remove('show');
+  }
+  function onTitleInput() {
+    document.getElementById('saveBtn').classList.toggle('invalid', !document.getElementById('f_title').value.trim());
+  }
+  // ファイル名サニタイズ（日本語等を除去）
+  function sanitizeFileName(name) {
+    return name.replace(/[^\w\-\.]/g, '_').substring(0, 80);
+  }
+
+  // ── 表紙画像アップロード ──────────────────────────────
+  function triggerUpload() { refreshFileInput('fileInput', false); document.getElementById('fileInput').click(); }
+  function triggerCamera() { refreshFileInput('cameraInput', true); document.getElementById('cameraInput').click(); }
+  function refreshFileInput(id, isCamera) {
+    const old = document.getElementById(id);
+    const neo = document.createElement('input');
+    neo.type = 'file'; neo.id = id; neo.accept = 'image/*'; neo.style = 'display:none';
+    if (isCamera) neo.setAttribute('capture', 'environment');
+    neo.onchange = onFileChange;
+    document.body.appendChild(neo); old.remove();
+  }
+  function onDragOver(e) {
+    e.preventDefault();
+    if (!document.getElementById('uploadArea').classList.contains('locked'))
+      document.getElementById('uploadArea').classList.add('dragging');
+  }
+  function onDragLeave() { document.getElementById('uploadArea').classList.remove('dragging'); }
+  function onDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadArea').classList.remove('dragging');
+    if (!document.getElementById('uploadArea').classList.contains('locked') && e.dataTransfer.files[0])
+      loadFile(e.dataTransfer.files[0]);
+  }
+  function onFileChange(e) { if (e.target.files[0]) loadFile(e.target.files[0]); }
+  function loadFile(file) {
+    if (!file.type.startsWith('image/')) { showError('errorBox', '画像ファイルを選択してください'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1000;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const resized = canvas.toDataURL('image/jpeg', 0.85);
+        imageBase64 = resized.split(',')[1]; imageMime = 'image/jpeg';
+        document.getElementById('previewImg').src = resized;
+        document.getElementById('uploadPlaceholder').style.display = 'none';
+        document.getElementById('uploadPreview').style.display = 'block';
+        document.getElementById('uploadArea').classList.add('has-image');
+        document.getElementById('analyzeBtn').style.display = 'block';
+        document.getElementById('resultCard').style.display = 'none';
+        clearError('errorBox');
+      };
+      img.onerror = () => showError('errorBox', '画像の処理に失敗しました（破損ファイルの可能性があります）');
+      img.src = e.target.result;
+    };
+    reader.onerror = () => showError('errorBox', '画像ファイルの読み込みに失敗しました');
+    reader.readAsDataURL(file);
+  }
+
+  // ── ページ画像管理 ────────────────────────────────────
+  function triggerPageInput(inputId) { document.getElementById(inputId).click(); }
+  function onPageDragOver(e, areaId) { e.preventDefault(); document.getElementById(areaId).classList.add('dragging'); }
+  function onPageDragLeave(areaId)   { document.getElementById(areaId).classList.remove('dragging'); }
+  function onPageDrop(e, areaId, mode) {
+    e.preventDefault();
+    document.getElementById(areaId).classList.remove('dragging');
+    addPageFiles(Array.from(e.dataTransfer.files), mode);
+  }
+  // onPageFileChange: mode と thumbsId を明示的に受け取る
+  function onPageFileChange(e, mode, thumbsId) {
+    addPageFiles(Array.from(e.target.files), mode, thumbsId);
+  }
+  const MAX_PAGE_IMAGES = 20;
+  function addPageFiles(files, mode, thumbsId) {
+    // thumbsIdが未指定の場合はmodeから導出
+    const tId = thumbsId || (mode === 'inline' ? 'inlinePageThumbs' : 'addImageThumbs');
+    const errorBoxId = mode === 'inline' ? 'inlineErrorBox' : 'addErrorBox';
+    const imgFiles = files.filter(f => f.type.startsWith('image/'));
+    const remaining = MAX_PAGE_IMAGES - pageImages[mode].length;
+    if (remaining <= 0) {
+      showError(errorBoxId, `画像は最大${MAX_PAGE_IMAGES}枚までです`);
+      return;
+    }
+    const toAdd = imgFiles.slice(0, remaining);
+    if (imgFiles.length > remaining) {
+      showError(errorBoxId, `${imgFiles.length}枚のうち${remaining}枚のみ追加します（最大${MAX_PAGE_IMAGES}枚）`);
+    }
+    toAdd.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1500;
+          let w = img.width, h = img.height;
+          if (w > MAX || h > MAX) {
+            if (w > h) { h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const resized = canvas.toDataURL('image/jpeg', 0.88);
+          const entry   = { base64: resized.split(',')[1], name: sanitizeFileName(file.name) };
+          pageImages[mode].push(entry);
+
+          // サムネイル（クロージャでentryを直接参照 → indexズレなし）
+          const thumb     = document.createElement('div');
+          thumb.className = 'page-thumb';
+          const imgEl     = document.createElement('img');
+          imgEl.src       = resized;
+          const rmBtn     = document.createElement('button');
+          rmBtn.className = 'page-thumb-remove';
+          rmBtn.textContent = '✕';
+          rmBtn.onclick = () => {
+            const idx = pageImages[mode].indexOf(entry);
+            if (idx !== -1) pageImages[mode].splice(idx, 1);
+            thumb.remove();
+          };
+          thumb.appendChild(imgEl); thumb.appendChild(rmBtn);
+          document.getElementById(tId).appendChild(thumb);
+        };
+        img.onerror = () => { /* 破損ファイルはスキップ */ };
+        img.src = e.target.result;
+      };
+      reader.onerror = () => { /* 読み込み失敗ファイルはスキップ */ };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ── ページ画像アップロード（最大3並列・エラー集約）────
+  async function uploadPageImages(mode) {
+    const isInline       = mode === 'inline';
+    const queue          = pageImages[mode];
+    const folderUrl      = isInline ? currentFolderUrl : selectedFolderUrl;
+    const btnId          = isInline ? 'inlineUploadBtn'    : 'addUploadBtn';
+    const progressId     = isInline ? 'inlineProgress'     : 'addProgress';
+    const progressFillId = isInline ? 'inlineProgressFill' : 'addProgressFill';
+    const errorBoxId     = isInline ? 'inlineErrorBox'     : 'addErrorBox';
+    const successBoxId   = isInline ? 'inlineSuccessBox'   : 'addSuccessBox';
+    const thumbsId       = isInline ? 'inlinePageThumbs'   : 'addImageThumbs';
+
+    if (!gasUrl)            { showError(errorBoxId, 'GAS URLを設定してください'); return; }
+    if (!folderUrl)         { showError(errorBoxId, 'フォルダURLが取得できていません'); return; }
+    if (queue.length === 0) { showError(errorBoxId, '画像を選択してください'); return; }
+
+    const btn = document.getElementById(btnId);
+    btn.disabled = true; btn.textContent = 'アップロード中…';
+    clearError(errorBoxId); clearSuccess(successBoxId);
+
+    const fill = document.getElementById(progressFillId);
+    document.getElementById(progressId).classList.add('show');
+    fill.style.width = '0%';
+
+    const CONCURRENCY = 3;
+    let successCount = 0;
+    let doneCount    = 0;
+    const errors        = [];
+    const failedEntries = []; // 失敗したエントリを追跡（部分成功時の再送用）
+    const snapshot      = [...queue]; // アップロード中の削除操作から保護
+
+    const uploadOne = async (entry, index) => {
+      const ctrl = new AbortController();
+      const tid  = setTimeout(() => ctrl.abort(), 60000);
+      try {
+        const res = await fetch(gasUrl, {
+          method: 'POST',
+          signal: ctrl.signal,
+          body: JSON.stringify({
+            action:      'uploadImage',
+            folderUrl,
+            imageBase64: entry.base64,
+            fileName:    'page_' + String(index + 1).padStart(3, '0') + '_' + Date.now() + '.jpg'
+          })
+        });
+        const rawText = await res.text();
+        let json;
+        try { json = JSON.parse(rawText); }
+        catch(_) { errors.push(`${index + 1}枚目: JSON解析エラー — ${rawText.substring(0, 80)}`); failedEntries.push(entry); return; }
+        if (json.success) successCount++;
+        else { errors.push(`${index + 1}枚目: ${json.error || '不明なエラー'}`); failedEntries.push(entry); }
+      } catch(e) {
+        const errMsg = e.name === 'AbortError' ? 'タイムアウト（60秒）' : e.message;
+        errors.push(`${index + 1}枚目: ${errMsg}`);
+        failedEntries.push(entry);
+        appLog(`画像アップロードエラー(${index + 1}枚目): ${errMsg}`, 'error');
+      } finally {
+        clearTimeout(tid);
+        doneCount++;
+        fill.style.width = Math.round((doneCount / snapshot.length) * 100) + '%';
+      }
+    };
+
+    for (let i = 0; i < snapshot.length; i += CONCURRENCY) {
+      await Promise.all(snapshot.slice(i, i + CONCURRENCY).map((entry, j) => uploadOne(entry, i + j)));
+    }
+
+    setTimeout(() => {
+      document.getElementById(progressId).classList.remove('show');
+      fill.style.width = '0%';
+    }, 800);
+
+    if (errors.length > 0) showError(errorBoxId, errors.join(' / '));
+    if (successCount > 0) {
+      showSuccess(successBoxId, `${successCount}枚アップロード完了！${failedEntries.length > 0 ? ` (${failedEntries.length}枚失敗・再送可)` : ''}`);
+      // 失敗エントリのみ残す（全成功時はキューと表示を全クリア）
+      pageImages[mode] = failedEntries;
+      if (failedEntries.length === 0) document.getElementById(thumbsId).innerHTML = '';
+    }
+
+    btn.disabled = false; btn.textContent = '📤 ドライブにアップロード';
+  }
+
+  // ── 登録後に画像追加パネルを表示 ─────────────────────
+  function showInlineUpload() {
+    clearError('inlineErrorBox'); clearSuccess('inlineSuccessBox');
+    document.getElementById('inlineUploadPanel').style.display = 'block';
+    document.getElementById('inlineBookTitle').textContent = '📖 ' + currentBookTitle;
+    document.getElementById('btnUploadPages').style.display = 'none';
+  }
+
+  // ── 本一覧を読み込む（連打防止） ─────────────────────
+  async function loadBookList() {
+    if (isLoadingBooks) return;
+    if (!gasUrl) { showError('listErrorBox', 'GAS URLを設定してください'); return; }
+    isLoadingBooks = true;
+    clearError('listErrorBox');
+
+    const btn = document.getElementById('btnLoadBooks');
+    btn.disabled = true; btn.textContent = '読み込み中…';
+
+    try {
+      appLog('本一覧取得開始');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      let res;
+      try {
+        res = await fetch(gasUrl + '?action=getBooks', { signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      appLog(`getBooks レスポンス: ${res.status}`);
+      const rawText = await res.text();
+      let json;
+      try { json = JSON.parse(rawText); }
+      catch(_) { throw new Error(`JSON解析失敗: ${rawText.substring(0, 120)}`); }
+      if (!json.success) throw new Error(json.error || '不明なエラー');
+
+      const list = document.getElementById('bookList');
+      list.innerHTML = '';
+
+      json.books.forEach(book => {
+        const item = document.createElement('div');
+        const hasFolder = !!book.folderUrl;
+        item.className = 'book-item' + (hasFolder ? '' : ' no-folder');
+        // XSS防止: innerHTML不使用・textContentで安全に設定
+        const infoDiv  = document.createElement('div');
+        const titleDiv = document.createElement('div');
+        titleDiv.className   = 'book-item-title';
+        titleDiv.textContent = book.title;
+        const authorDiv = document.createElement('div');
+        authorDiv.className   = 'book-item-author';
+        authorDiv.textContent = (book.author || '著者不明') + (!hasFolder ? ' — フォルダ未作成' : '');
+        infoDiv.appendChild(titleDiv);
+        infoDiv.appendChild(authorDiv);
+        const iconDiv = document.createElement('div');
+        iconDiv.className   = 'book-item-icon';
+        iconDiv.textContent = hasFolder ? '📁' : '—';
+        item.appendChild(infoDiv);
+        item.appendChild(iconDiv);
+        if (hasFolder) item.onclick = () => selectBook(book, item);
+        list.appendChild(item);
+      });
+
+      document.getElementById('bookListArea').style.display = 'block';
+      // 本選択状態もリセット
+      selectedFolderUrl = '';
+      document.getElementById('addImagePanel').style.display = 'none';
+
+    } catch(e) {
+      const msg = e.name === 'AbortError' ? 'タイムアウト（30秒）: ネットワーク状況を確認してください' : '読み込みに失敗: ' + e.message;
+      showError('listErrorBox', msg);
+    } finally {
+      btn.disabled = false; btn.textContent = '📚 登録済みの本を読み込む';
+      isLoadingBooks = false;
+    }
+  }
+
+  function selectBook(book, itemEl) {
+    if (pageImages.add.length > 0) {
+      if (!confirm(`選択中の${pageImages.add.length}枚の画像を破棄して別の本に切り替えますか？`)) return;
+    }
+    document.querySelectorAll('.book-item').forEach(i => i.classList.remove('selected'));
+    itemEl.classList.add('selected');
+
+    // 本切り替え時に前の状態をリセット
+    selectedFolderUrl = book.folderUrl;
+    pageImages.add    = [];
+    document.getElementById('addImageThumbs').innerHTML = '';
+    clearError('addErrorBox'); clearSuccess('addSuccessBox');
+
+    document.getElementById('addImageBookTitle').textContent = '📖 ' + book.title;
+    document.getElementById('addImagePanel').style.display = 'block';
+  }
+
+  // ── 解析 ──────────────────────────────────────────────
+  async function analyze() {
+    if (!apiKey)      { showError('errorBox', 'APIキーを入力・保存してください'); return; }
+    if (!imageBase64) { showError('errorBox', '画像を選択してください'); return; }
+
+    const btn        = document.getElementById('analyzeBtn');
+    const uploadArea = document.getElementById('uploadArea');
+    btn.disabled = true; btn.textContent = '🔍 表紙を解析しています…';
+    btn.classList.add('shimmer'); uploadArea.classList.add('locked');
+    clearError('errorBox');
+
+    const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+    try {
+      appLog('Claude API 呼び出し開始');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      let res;
+      try {
+        res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 1000,
+            messages: [{ role: 'user', content: [
+              { type: 'image', source: { type: 'base64', media_type: imageMime, data: imageBase64 } },
+              { type: 'text', text: `この本の表紙画像を分析し、以下のJSON形式のみで回答してください。前置き・説明・Markdownコードブロックは不要です。JSONのみ出力してください。\n{"title":"","author":"","genre":"","rating":3,"summary":"","memo":""}\n- title: 本のタイトル（不明なら空文字）\n- author: 著者名（不明なら空文字）\n- genre: ジャンル（例：小説、ビジネス、自己啓発、技術書、歴史など）\n- rating: 表紙の印象から1〜5の整数\n- summary: タイトルや表紙から推測できる内容を1〜2文で要約\n- memo: 必ず空文字で返してください` }
+            ]}]
+          })
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      appLog(`Claude API レスポンス: ${res.status}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(`APIエラー ${res.status}: ${errData?.error?.message || res.statusText}`);
+      }
+
+      const data = await res.json();
+      const text = data.content.map(i => i.text || '').join('');
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('JSONレスポンスが取得できませんでした');
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      document.getElementById('f_title').value   = parsed.title   || '';
+      document.getElementById('f_author').value  = parsed.author  || '';
+      document.getElementById('f_genre').value   = parsed.genre   || '';
+      document.getElementById('f_summary').value = parsed.summary || '';
+      document.getElementById('f_memo').value    = '';
+      document.getElementById('f_date').value    = today;
+      setRating(Math.min(5, Math.max(1, parseInt(parsed.rating) || 3)));
+      updateCount('f_summary', 'summaryCount');
+      updateCount('f_memo', 'memoCount');
+
+      document.getElementById('resultCard').style.display          = 'block';
+      document.getElementById('stamp').style.display               = 'none';
+      document.getElementById('saveBtn').style.display             = 'block';
+      document.getElementById('nextBtn').style.display             = 'none';
+      document.getElementById('btnUploadPages').style.display      = 'none';
+      document.getElementById('inlineUploadPanel').style.display   = 'none';
+      enableFields(true); onTitleInput();
+
+    } catch(e) {
+      const msg = e.name === 'AbortError' ? 'タイムアウト（30秒）: ネットワーク状況を確認してください' : '解析に失敗しました: ' + e.message;
+      showError('errorBox', msg);
+    } finally {
+      btn.disabled = false; btn.textContent = '✦ 表紙を解析する';
+      btn.classList.remove('shimmer'); uploadArea.classList.remove('locked');
+    }
+  }
+
+  // ── 星評価 ────────────────────────────────────────────
+  function setRating(n) {
+    currentRating = n;
+    document.querySelectorAll('.star').forEach((s, i) => {
+      s.classList.toggle('active', i < n);
+      s.setAttribute('aria-checked', i < n ? 'true' : 'false');
+    });
+  }
+  function onStarKeydown(e) {
+    if (['ArrowRight','ArrowLeft'].includes(e.key)) {
+      e.preventDefault();
+      setRating(e.key === 'ArrowRight' ? Math.min(currentRating + 1, 5) : Math.max(currentRating - 1, 1));
+    }
+  }
+
+  // ── フィールド有効/無効 ───────────────────────────────
+  function enableFields(enabled) {
+    ['f_title','f_author','f_genre','f_summary','f_memo'].forEach(id => {
+      document.getElementById(id).disabled = !enabled;
+    });
+    document.querySelectorAll('.star').forEach(s => {
+      s.classList.toggle('disabled', !enabled);
+      s.setAttribute('tabindex', enabled ? '0' : '-1');
+      s.onclick = enabled ? function() { setRating(parseInt(this.getAttribute('data-n'))); } : null;
+    });
+  }
+
+  // ── スプレッドシートへ登録 ────────────────────────────
+  async function saveToSheet() {
+    if (isSaving) return;
+    const title = document.getElementById('f_title').value.trim();
+    if (!title)  { showError('errorBox', 'タイトルを入力してください'); return; }
+    if (!gasUrl) { showError('errorBox', 'GAS WebアプリURLを入力してください'); return; }
+
+    isSaving = true;
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true; btn.textContent = '登録中…';
+    clearError('errorBox');
+
+    const payload = {
+      title,
+      author:  document.getElementById('f_author').value,
+      genre:   document.getElementById('f_genre').value,
+      rating:  currentRating,
+      summary: document.getElementById('f_summary').value,
+      memo:    document.getElementById('f_memo').value,
+      date:    document.getElementById('f_date').value,
+    };
+
+    try {
+      appLog(`保存開始: "${title}"`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      let res;
+      try {
+        res = await fetch(gasUrl, { method: 'POST', body: JSON.stringify(payload), signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      appLog(`GASレスポンス: ${res.status} ${res.statusText}`);
+      const rawText = await res.text();
+      if (!res.ok) throw new Error(`HTTPエラー: ${res.status} — ${rawText.substring(0, 120)}`);
+      let json;
+      try { json = JSON.parse(rawText); }
+      catch(_) { throw new Error(`GASのレスポンスがJSONではありません: ${rawText.substring(0, 150)}`); }
+      if (json.success) {
+        currentFolderUrl = json.folderUrl || '';
+        currentBookTitle = title;
+        document.getElementById('stamp').style.display          = 'block';
+        document.getElementById('saveBtn').style.display        = 'none';
+        document.getElementById('nextBtn').style.display        = 'block';
+        document.getElementById('btnUploadPages').style.display = currentFolderUrl ? 'block' : 'none';
+        enableFields(false);
+      } else {
+        throw new Error(json.error || '不明なエラー');
+      }
+    } catch(e) {
+      const msg = e.name === 'AbortError' ? 'タイムアウト（30秒）: ネットワーク状況を確認してください' : '保存に失敗しました: ' + e.message;
+      showError('errorBox', msg);
+      btn.disabled = false; btn.textContent = '📚 スプレッドシートに登録';
+    } finally {
+      isSaving = false;
+    }
+  }
+
+  // ── ログコピー ────────────────────────────────────────
+  function copyLog() {
+    const text = appLogs.length ? appLogs.join('\n') : '(ログなし)';
+    const btn = document.getElementById('copyLogBtn');
+    const done = () => {
+      btn.textContent = '✅ コピー完了';
+      setTimeout(() => { btn.textContent = '📋 ログをコピー'; }, 2000);
+    };
+    // iOS Safari は navigator.clipboard が使えないことがあるのでフォールバック付き
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => {
+        execCopy(text); done();
+      });
+    } else {
+      execCopy(text); done();
+    }
+  }
+  function execCopy(text) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+    document.body.appendChild(el);
+    el.focus(); el.select();
+    try { document.execCommand('copy'); } catch(_) {}
+    document.body.removeChild(el);
+  }
+
+  // ── Service Worker登録 ───────────────────────────────
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/book-scanner/service-worker.js')
+        .then(() => console.log('SW registered'))
+        .catch(e => console.log('SW error:', e));
+    });
+  }
+
+  // ── リセット ──────────────────────────────────────────
+  function resetAll() {
+    imageBase64 = null; isSaving = false;
+    currentFolderUrl = ''; currentBookTitle = '';
+    pageImages.inline = [];
+    refreshFileInput('fileInput', false);
+    refreshFileInput('cameraInput', true);
+    document.getElementById('uploadPlaceholder').style.display        = 'block';
+    document.getElementById('uploadPreview').style.display            = 'none';
+    document.getElementById('uploadArea').classList.remove('has-image','dragging','locked');
+    document.getElementById('analyzeBtn').style.display               = 'none';
+    document.getElementById('resultCard').style.display               = 'none';
+    document.getElementById('btnUploadPages').style.display           = 'none';
+    // 保存成功後もdisabledが残るバグ修正: 次の本登録時にボタンを再有効化
+    const saveBtnEl = document.getElementById('saveBtn');
+    saveBtnEl.disabled     = false;
+    saveBtnEl.textContent  = '📚 スプレッドシートに登録';
+    saveBtnEl.style.display = 'none';
+    document.getElementById('inlineUploadPanel').style.display        = 'none';
+    document.getElementById('inlinePageThumbs').innerHTML             = '';
+    clearError('errorBox');
+    clearError('inlineErrorBox'); clearSuccess('inlineSuccessBox');
+    setRating(3);
+    updateCount('f_summary', 'summaryCount');
+    updateCount('f_memo',    'memoCount');
+  }
+</script>
+</body>
+</html>
