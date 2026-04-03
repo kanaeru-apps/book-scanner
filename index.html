@@ -447,6 +447,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   // onPageFileChange: mode と thumbsId を明示的に受け取る
   function onPageFileChange(e, mode, thumbsId) {
     addPageFiles(Array.from(e.target.files), mode, thumbsId);
+    e.target.value = '';  // 同じファイルを再選択できるようにリセット
   }
   const MAX_PAGE_IMAGES = 20;
   function addPageFiles(files, mode, thumbsId) {
@@ -496,10 +497,10 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
           thumb.appendChild(imgEl); thumb.appendChild(rmBtn);
           document.getElementById(tId).appendChild(thumb);
         };
-        img.onerror = () => { /* 破損ファイルはスキップ */ };
+        img.onerror = () => { showError(errorBoxId, `読み込めないファイルをスキップしました: ${file.name}`); };
         img.src = e.target.result;
       };
-      reader.onerror = () => { /* 読み込み失敗ファイルはスキップ */ };
+      reader.onerror = () => { showError(errorBoxId, `ファイルの読み込みに失敗しました: ${file.name}`); };
       reader.readAsDataURL(file);
     });
   }
@@ -618,7 +619,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       const list = document.getElementById('bookList');
       list.innerHTML = '';
 
-      json.books.forEach(book => {
+      (json.books || []).forEach(book => {
         const item = document.createElement('div');
         const hasFolder = !!book.folderUrl;
         item.className = 'book-item' + (hasFolder ? '' : ' no-folder');
