@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Scanner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: #1c1510;
+      background-image:
+        radial-gradient(ellipse at 20% 10%, rgba(120,80,20,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 90%, rgba(80,40,10,0.2) 0%, transparent 60%);
+      font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+      color: #d4b896;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .container { width: 100%; max-width: 520px; }
+    .header { text-align: center; margin-bottom: 2rem; }
+    .header-sub { font-family: 'Playfair Display', serif; font-size: 0.7rem; letter-spacing: 0.4em; color: #8a6a3a; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .header h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; color: #e8c87a; text-shadow: 0 2px 20px rgba(200,149,42,0.3); }
+    .divider { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, #8a6a3a, transparent); margin: 0.8rem auto; }
+    .header p { color: #6a5030; font-size: 0.85rem; font-style: italic; }
+
+    .config-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(200,149,42,0.15);
+      border-radius: 4px; padding: 1.2rem; margin-bottom: 1.5rem;
+      transition: border 0.3s;
+    }
+    .config-box.saved { border-color: rgba(200,149,42,0.5); }
+    .config-label { font-size: 0.7rem; letter-spacing: 0.2em; color: #8a6a3a; text-transform: uppercase; margin-bottom: 0.8rem; display: flex; justify-content: space-between; }
+    .config-label span.badge { color: #c8952a; }
+    .config-row { display: flex; gap: 0.5rem; }
+    .config-box input {
+      flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(200,149,42,0.2);
+      border-radius: 3px; padding: 0.6rem 0.8rem; color: #d4b896; font-size: 0.78rem;
+      font-family: inherit;
+    }
+    .config-box input:focus { outline: none; }
+    .config-box p { font-size: 0.72rem; color: #4a3820; margin-top: 0.5rem; }
+
+    .upload-area {
+      border: 2px dashed rgba(200,149,42,0.25);
+      border-radius: 4px; padding: 3rem 2rem;
+      text-align: center; cursor: pointer;
+      background: rgba(0,0,0,0.2);
+      transition: all 0.3s; margin-bottom: 1.2rem;
+      position: relative;
+    }
+    .upload-area:hover { border-color: rgba(200,149,42,0.5); }
+    .upload-area.dragging { border-color: #c8952a; background: rgba(200,149,42,0.05); }
+    .upload-area.has-image { padding: 1rem; }
+    .upload-icon { font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.5; }
+    .upload-text { color: #8a6a3a; font-size: 0.9rem; line-height: 1.6; }
+    .preview-img { max-height: 260px; max-width: 100%; border-radius: 2px; box-shadow: 4px 4px 20px rgba(0,0,0,0.6); }
+    .remove-btn {
+      position: absolute; top: -10px; right: -10px;
+      background: #3a2010; border: 1px solid rgba(200,149,42,0.4);
+      color: #c8952a; border-radius: 50%; width: 28px; height: 28px;
+      cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
+    }
+    .img-wrap { position: relative; display: inline-block; }
+
+    .btn {
+      width: 100%; padding: 0.9rem; border: none; border-radius: 3px;
+      background: linear-gradient(135deg, #c8952a, #e8c87a, #c8952a);
+      color: #1c1510; font-family: 'Playfair Display', serif;
+      font-weight: 700; font-size: 1rem; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(200,149,42,0.3);
+      letter-spacing: 0.05em; transition: all 0.2s;
+    }
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn:disabled { background: rgba(200,149,42,0.2); color: #8a6a3a; box-shadow: none; cursor: wait; transform: none; }
+    .btn-sm {
+      background: rgba(200,149,42,0.2); border: 1px solid rgba(200,149,42,0.3);
+      color: #c8952a; border-radius: 3px; padding: 0 1rem; cursor: pointer;
+      font-size: 0.8rem; font-family: inherit; transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-sm:hover { opacity: 0.85; }
+
+    .result-card {
+      background: rgba(20,14,8,0.8); border: 1px solid rgba(200,149,42,0.3);
+      border-radius: 4px; padding: 1.5rem; position: relative;
+      animation: fadeIn 0.5s ease forwards;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes stamp { 0% { transform:scale(1.4) rotate(-8deg); opacity:0; } 100% { transform:scale(1) rotate(-8deg); opacity:1; } }
+    @keyframes shimmer { 0%,100% { opacity:0.6; } 50% { opacity:1; } }
+    .shimmer { animation: shimmer 1.5s ease infinite; }
+
+    .stamp {
+      position: absolute; top: 16px; right: 16px;
+      border: 3px solid #4a9a4a; color: #4a9a4a;
+      padding: 4px 10px; border-radius: 2px; font-size: 0.7rem;
+      letter-spacing: 0.15em; font-weight: bold;
+      transform: rotate(-8deg);
+      animation: stamp 0.4s cubic-bezier(0.22,0.61,0.36,1) forwards;
+    }
+    .card-title-label { font-family: 'Playfair Display', serif; font-size: 0.65rem; letter-spacing: 0.3em; color: #6a5030; text-transform: uppercase; margin-bottom: 1rem; }
+    .field { margin-bottom: 1rem; }
+    .field-label { font-size: 0.65rem; letter-spacing: 0.2em; color: #6a5030; text-transform: uppercase; margin-bottom: 0.3rem; }
+    .field input, .field textarea {
+      width: 100%; background: transparent; border: none;
+      border-bottom: 1px solid rgba(200,149,42,0.2);
+      color: #d4b896; font-size: 0.9rem; padding: 0.3rem 0;
+      font-family: inherit; resize: none; line-height: 1.6;
+    }
+    .field input:focus, .field textarea:focus { outline: none; }
+    .field input.title-input { color: #e8c87a; font-size: 1.15rem; font-family: 'Playfair Display', serif; }
+    .field input:disabled, .field textarea:disabled { border-bottom-color: transparent; }
+    .stars { display: flex; gap: 4px; }
+    .star { font-size: 24px; cursor: pointer; transition: color 0.15s; color: #3a2f1e; }
+    .star.active { color: #c8952a; text-shadow: 0 0 8px rgba(200,149,42,0.5); }
+    .star.disabled { cursor: default; }
+    .btn-row { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+    .btn-reset {
+      flex: 1; padding: 0.7rem; background: transparent;
+      border: 1px solid rgba(200,149,42,0.2); color: #6a5030;
+      border-radius: 3px; cursor: pointer; font-size: 0.85rem;
+      font-family: inherit; transition: all 0.2s;
+    }
+    .btn-reset:hover { opacity: 0.85; }
+    .btn-save {
+      flex: 2; padding: 0.7rem;
+      background: linear-gradient(135deg, #c8952a, #e8c87a);
+      border: none; border-radius: 3px; color: #1c1510;
+      font-weight: bold; font-size: 0.9rem; cursor: pointer;
+      font-family: 'Playfair Display', serif; transition: all 0.2s;
+    }
+    .btn-save:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-save:disabled { opacity: 0.5; cursor: wait; transform: none; }
+    .btn-next {
+      flex: 2; padding: 0.7rem;
+      background: rgba(74,154,74,0.15); border: 1px solid rgba(74,154,74,0.3);
+      color: #4a9a4a; border-radius: 3px; cursor: pointer;
+      font-size: 0.85rem; font-family: inherit; transition: all 0.2s;
+    }
+    .btn-next:hover { opacity: 0.85; }
+    .footer { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; color: #3a2810; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-sub">Personal Library</div>
+    <h1>Book Scanner</h1>
+    <div class="divider"></div>
+    <p>表紙を読み取り、蔵書リストへ自動登録</p>
+  </div>
+
+  <div class="config-box" id="configBox">
+    <div class="config-label">
+      <span>🔗 GAS WebアプリURL</span>
+      <span class="badge" id="savedBadge" style="display:none">✦ 設定済み</span>
+    </div>
+    <div class="config-row">
+      <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/...">
+      <button class="btn-sm" onclick="saveUrl()">保存</button>
+    </div>
+    <p>GAS「デプロイ」→「デプロイを管理」でURLをコピーして貼り付け</p>
+  </div>
+
+  <div class="upload-area" id="uploadArea" onclick="triggerUpload()" ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
+    <div id="uploadPlaceholder">
+      <div class="upload-icon">📖</div>
+      <div class="upload-text">クリックまたはドロップで<br>本の表紙画像を追加</div>
+    </div>
+    <div id="uploadPreview" style="display:none">
+      <div class="img-wrap">
+        <img id="previewImg" class="preview-img" src="" alt="表紙">
+        <button class="remove-btn" onclick="event.stopPropagation(); resetAll()">✕</button>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="onFileChange(event)">
+
+  <button class="btn" id="analyzeBtn" style="display:none" onclick="analyze()">✦ 表紙を解析する</button>
+
+  <div class="result-card" id="resultCard" style="display:none">
+    <div class="stamp" id="stamp" style="display:none">✓ 登録済</div>
+    <div class="card-title-label">— Library Card —</div>
+
+    <div class="field">
+      <div class="field-label">タイトル</div>
+      <input type="text" id="f_title" class="title-input">
+    </div>
+    <div class="field">
+      <div class="field-label">著者名</div>
+      <input type="text" id="f_author">
+    </div>
+    <div class="field">
+      <div class="field-label">ジャンル</div>
+      <input type="text" id="f_genre">
+    </div>
+    <div class="field">
+      <div class="field-label">評価</div>
+      <div class="stars" id="stars">
+        <span class="star" onclick="setRating(1)">★</span>
+        <span class="star" onclick="setRating(2)">★</span>
+        <span class="star" onclick="setRating(3)">★</span>
+        <span class="star" onclick="setRating(4)">★</span>
+        <span class="star" onclick="setRating(5)">★</span>
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">一言コメント</div>
+      <textarea id="f_comment" rows="2"></textarea>
+    </div>
+    <div class="field">
+      <div class="field-label">登録日</div>
+      <input type="text" id="f_date">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-reset" onclick="resetAll()">リセット</button>
+      <button class="btn-save" id="saveBtn" onclick="saveToSheet()">📚 スプレッドシートに登録</button>
+      <button class="btn-next" id="nextBtn" style="display:none" onclick="resetAll()">＋ 次の本を登録</button>
+    </div>
+  </div>
+
+  <div class="footer">Powered by Claude Vision × Google Sheets</div>
+</div>
+
+<script>
+  let currentRating = 3;
+  let imageBase64 = null;
+  let imageMime = 'image/jpeg';
+  let gasUrl = localStorage.getItem('gasUrl') || '';
+
+  window.onload = () => {
+    if (gasUrl) {
+      document.getElementById('gasUrl').value = gasUrl;
+      document.getElementById('savedBadge').style.display = 'inline';
+      document.getElementById('configBox').classList.add('saved');
+    }
+  };
+
+  function saveUrl() {
+    gasUrl = document.getElementById('gasUrl').value.trim();
+    if (gasUrl) {
+      localStorage.setItem('gasUrl', gasUrl);
+      document.getElementById('savedBadge').style.display = 'inline';
+      document.getElementById('configBox').classList.add('saved');
+    }
+  }
+
+  function triggerUpload() {
+    if (!imageBase64) document.getElementById('fileInput').click();
+  }
+
+  function onDragOver(e) { e.preventDefault(); document.getElementById('uploadArea').classList.add('dragging'); }
+  function onDragLeave() { document.getElementById('uploadArea').classList.remove('dragging'); }
+  function onDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadArea').classList.remove('dragging');
+    const file = e.dataTransfer.files[0];
+    if (file) loadFile(file);
+  }
+  function onFileChange(e) { if (e.target.files[0]) loadFile(e.target.files[0]); }
+
+  function loadFile(file) {
+    if (!file.type.startsWith('image/')) return;
+    imageMime = file.type;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imageBase64 = e.target.result.split(',')[1];
+      document.getElementById('previewImg').src = e.target.result;
+      document.getElementById('uploadPlaceholder').style.display = 'none';
+      document.getElementById('uploadPreview').style.display = 'block';
+      document.getElementById('uploadArea').classList.add('has-image');
+      document.getElementById('uploadArea').style.cursor = 'default';
+      document.getElementById('analyzeBtn').style.display = 'block';
+      document.getElementById('resultCard').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function analyze() {
+    const btn = document.getElementById('analyzeBtn');
+    btn.disabled = true;
+    btn.textContent = '🔍 表紙を解析しています…';
+    btn.classList.add('shimmer');
+    const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: [
+            { type: 'image', source: { type: 'base64', media_type: imageMime, data: imageBase64 } },
+            { type: 'text', text: `この本の表紙画像を見て、以下のJSON形式のみで回答。前置き不要。\n{"title":"","author":"","genre":"","rating":3,"comment":"","date":"${today}"}\n不明は空文字。ratingは1〜5の整数。` }
+          ]}]
+        })
+      });
+      const data = await res.json();
+      const text = data.content.map(i => i.text || '').join('');
+      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+      document.getElementById('f_title').value = parsed.title || '';
+      document.getElementById('f_author').value = parsed.author || '';
+      document.getElementById('f_genre').value = parsed.genre || '';
+      document.getElementById('f_comment').value = parsed.comment || '';
+      document.getElementById('f_date').value = parsed.date || today;
+      setRating(parsed.rating || 3);
+      document.getElementById('resultCard').style.display = 'block';
+      document.getElementById('stamp').style.display = 'none';
+      document.getElementById('saveBtn').style.display = 'block';
+      document.getElementById('nextBtn').style.display = 'none';
+      enableFields(true);
+    } catch(e) {
+      alert('解析に失敗しました。');
+    }
+    btn.disabled = false;
+    btn.textContent = '✦ 表紙を解析する';
+    btn.classList.remove('shimmer');
+  }
+
+  function setRating(n) {
+    currentRating = n;
+    document.querySelectorAll('.star').forEach((s, i) => {
+      s.classList.toggle('active', i < n);
+    });
+  }
+
+  function enableFields(enabled) {
+    ['f_title','f_author','f_genre','f_comment','f_date'].forEach(id => {
+      document.getElementById(id).disabled = !enabled;
+    });
+    document.querySelectorAll('.star').forEach(s => {
+      s.classList.toggle('disabled', !enabled);
+      s.style.cursor = enabled ? 'pointer' : 'default';
+      if (!enabled) s.onclick = null;
+      else s.onclick = function() { setRating(parseInt(this.getAttribute('data-n'))); };
+    });
+    document.querySelectorAll('.star').forEach((s, i) => s.setAttribute('data-n', i+1));
+  }
+
+  async function saveToSheet() {
+    gasUrl = document.getElementById('gasUrl').value.trim();
+    if (!gasUrl) { alert('GAS WebアプリURLを入力してください'); return; }
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.textContent = '登録中…';
+    const payload = {
+      title: document.getElementById('f_title').value,
+      author: document.getElementById('f_author').value,
+      genre: document.getElementById('f_genre').value,
+      rating: currentRating,
+      comment: document.getElementById('f_comment').value,
+      date: document.getElementById('f_date').value,
+    };
+    try {
+      const encoded = encodeURIComponent(JSON.stringify(payload));
+      const res = await fetch(`${gasUrl}?data=${encoded}`);
+      const json = await res.json();
+      if (json.success) {
+        document.getElementById('stamp').style.display = 'block';
+        document.getElementById('saveBtn').style.display = 'none';
+        document.getElementById('nextBtn').style.display = 'block';
+        enableFields(false);
+      } else {
+        alert('保存失敗: ' + (json.error || '不明なエラー'));
+        btn.disabled = false;
+        btn.textContent = '📚 スプレッドシートに登録';
+      }
+    } catch(e) {
+      alert('保存に失敗しました。');
+      btn.disabled = false;
+      btn.textContent = '📚 スプレッドシートに登録';
+    }
+  }
+
+  function resetAll() {
+    imageBase64 = null;
+    document.getElementById('fileInput').value = '';
+    document.getElementById('uploadPlaceholder').style.display = 'block';
+    document.getElementById('uploadPreview').style.display = 'none';
+    document.getElementById('uploadArea').classList.remove('has-image');
+    document.getElementById('uploadArea').style.cursor = 'pointer';
+    document.getElementById('analyzeBtn').style.display = 'none';
+    document.getElementById('resultCard').style.display = 'none';
+  }
+</script>
+</body>
+</html>
