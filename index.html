@@ -116,8 +116,8 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 .progress-bar.show { display: block; }
 .progress-fill { height: 100%; background: linear-gradient(90deg, #6050c8, #a090e0); border-radius: 2px; transition: width 0.3s; }
 .footer { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; color: #3a2810; }
-.log-copy-btn { margin-top: 0.8rem; padding: 0.4rem 1rem; background: transparent; border: 1px solid rgba(200,149,42,0.15); color: #4a3820; border-radius: 3px; cursor: pointer; font-size: 0.7rem; font-family: inherit; transition: all 0.2s; }
-.log-copy-btn:hover { border-color: rgba(200,149,42,0.4); color: #8a6a3a; }
+.log-copy-btn { margin-top: 0.8rem; padding: 0.4rem 1rem; background: rgba(200,149,42,0.08); border: 1px solid rgba(200,149,42,0.3); color: #8a6a3a; border-radius: 3px; cursor: pointer; font-size: 0.7rem; font-family: inherit; transition: all 0.2s; }
+.log-copy-btn:hover { border-color: rgba(200,149,42,0.5); color: #c8952a; background: rgba(200,149,42,0.12); }
 </style>
 </head>
 <body>
@@ -136,9 +136,10 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     </div>
     <div class="config-row">
       <input type="password" id="apiKeyInput" placeholder="sk-ant-..." onkeydown="if(event.key==='Enter') saveApiKey()">
+      <button class="btn-sm" onclick="toggleApiKeyVisibility()">👁</button>
       <button class="btn-sm" onclick="saveApiKey()">保存</button>
     </div>
-    <p>APIキーはこのデバイスのブラウザに保存されます</p>
+    <p>タブを閉じると消えます（セッション限り）</p>
   </div>
 
   <div class="config-box" id="configBox">
@@ -151,6 +152,16 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       <button class="btn-sm" onclick="saveUrl()">保存</button>
     </div>
     <p>GAS「デプロイ」→「デプロイを管理」でURLをコピーして貼り付け</p>
+  </div>
+
+  <div class="config-box">
+    <div class="config-label">
+      <span>🔍 デバッグ</span>
+    </div>
+    <div class="config-row">
+      <button class="btn-sm" onclick="downloadLogs()" style="width: 100%;">📥 ログをダウンロード</button>
+    </div>
+    <p>エラーが発生したときはログをダウンロードして共有してください</p>
   </div>
 
   <div class="tab-bar">
@@ -294,7 +305,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   let selectedFolderUrl = '';
   const pageImages     = { inline: [], add: [] };
 
-  let apiKey = localStorage.getItem('apiKey') || '';
+  let apiKey = sessionStorage.getItem('apiKey') || '';
   let gasUrl = localStorage.getItem('gasUrl') || '';
 
   // ── ログ管理 ──────────────────────────────────────────
@@ -303,6 +314,24 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     const t = new Date().toLocaleTimeString('ja-JP');
     if (appLogs.length >= 500) appLogs.shift();
     appLogs.push(`[${t}] [${level.toUpperCase()}] ${msg}`);
+  }
+
+  function downloadLogs() {
+    if (appLogs.length === 0) {
+      alert('ログがまだ記録されていません');
+      return;
+    }
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const logText = appLogs.join('\n');
+    const blob = new Blob([logText], { type: 'text/plain; charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `book-scanner-logs_${timestamp}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   // ── 初期化 ────────────────────────────────────────────
@@ -318,6 +347,15 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       document.getElementById('configBox').classList.add('saved');
     }
     document.getElementById('stars').addEventListener('keydown', onStarKeydown);
+
+    // iOS でドラッグ&ドロップが非対応のため、テキストを調整（修正：UX向上）
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      const uploadText = document.querySelector('.upload-text');
+      if (uploadText) {
+        uploadText.textContent = '本の表紙画像を追加\n（iOS では「カメラで撮影」をご利用ください）';
+      }
+    }
   };
 
   // ── タブ切り替え（data-tab属性で判定） ───────────────
@@ -333,21 +371,41 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   // ── 設定保存 ──────────────────────────────────────────
   function saveApiKey() {
     const val = document.getElementById('apiKeyInput').value.trim();
-    if (val) {
-      apiKey = val;
-      localStorage.setItem('apiKey', apiKey);
-      document.getElementById('apiSavedBadge').style.display = 'inline';
-      document.getElementById('apiBox').classList.add('saved');
+    if (!val) {
+      showError('apiBox', 'APIキーを入力してください');
+      return;
     }
+    if (!val.startsWith('sk-ant-')) {
+      showError('apiBox', '無効な APIキーです（sk-ant- で始まる必要があります）');
+      return;
+    }
+    apiKey = val;
+    sessionStorage.setItem('apiKey', apiKey);
+    document.getElementById('apiSavedBadge').style.display = 'inline';
+    document.getElementById('apiBox').classList.add('saved');
+    appLog('APIキーを保存しました（セッション中のみ有効）');
+  }
+  function toggleApiKeyVisibility() {
+    const input = document.getElementById('apiKeyInput');
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    appLog(`APIキーの表示を${isPassword ? '表示' : '非表示'}に変更`);
   }
   function saveUrl() {
     const val = document.getElementById('gasUrlInput').value.trim();
-    if (val) {
-      gasUrl = val;
-      localStorage.setItem('gasUrl', gasUrl);
-      document.getElementById('savedBadge').style.display = 'inline';
-      document.getElementById('configBox').classList.add('saved');
+    if (!val) {
+      showError('configBox', 'URLを入力してください');
+      return;
     }
+    // GAS URLのバリデーション（修正：セキュリティ対策）
+    if (!val.startsWith('https://script.google.com/macros/s/')) {
+      showError('configBox', '無効なGAS URLです（https://script.google.com/macros/s/... で始まる必要があります）');
+      return;
+    }
+    gasUrl = val;
+    localStorage.setItem('gasUrl', gasUrl);
+    document.getElementById('savedBadge').style.display = 'inline';
+    document.getElementById('configBox').classList.add('saved');
   }
 
   // ── ユーティリティ ────────────────────────────────────
@@ -358,19 +416,25 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     const box = document.getElementById(boxId);
     box.textContent = '⚠ ' + msg; box.classList.add('show');
     appLog(msg, 'error');
+    if (box.dataset.timerId) clearTimeout(parseInt(box.dataset.timerId));
+    box.dataset.timerId = setTimeout(() => clearError(boxId), 5000);
   }
   function clearError(boxId) {
     const box = document.getElementById(boxId);
-    box.textContent = ''; box.classList.remove('show');
+    if (box.dataset.timerId) clearTimeout(parseInt(box.dataset.timerId));
+    box.textContent = ''; box.classList.remove('show'); box.dataset.timerId = '';
   }
   function showSuccess(boxId, msg) {
     const box = document.getElementById(boxId);
     box.textContent = '✓ ' + msg; box.classList.add('show');
     appLog(msg, 'success');
+    if (box.dataset.timerId) clearTimeout(parseInt(box.dataset.timerId));
+    box.dataset.timerId = setTimeout(() => clearSuccess(boxId), 5000);
   }
   function clearSuccess(boxId) {
     const box = document.getElementById(boxId);
-    box.textContent = ''; box.classList.remove('show');
+    if (box.dataset.timerId) clearTimeout(parseInt(box.dataset.timerId));
+    box.textContent = ''; box.classList.remove('show'); box.dataset.timerId = '';
   }
   function onTitleInput() {
     document.getElementById('saveBtn').classList.toggle('invalid', !document.getElementById('f_title').value.trim());
@@ -400,12 +464,18 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   function onDrop(e) {
     e.preventDefault();
     document.getElementById('uploadArea').classList.remove('dragging');
-    if (!document.getElementById('uploadArea').classList.contains('locked') && e.dataTransfer.files[0])
+    if (!document.getElementById('uploadArea').classList.contains('locked') && e.dataTransfer.files[0]) {
+      if (e.dataTransfer.files.length > 1) {
+        showError('errorBox', `【注意】${e.dataTransfer.files.length}枚のファイルを検出しましたが、表紙は1枚のみです。先頭のファイルのみを使用します`);
+      }
       loadFile(e.dataTransfer.files[0]);
+    }
   }
   function onFileChange(e) { if (e.target.files[0]) loadFile(e.target.files[0]); }
   function loadFile(file) {
     if (!file.type.startsWith('image/')) { showError('errorBox', '画像ファイルを選択してください'); return; }
+    // ファイルサイズ上限チェック（修正：メモリ枯渇対策）
+    if (file.size > 20 * 1024 * 1024) { showError('errorBox', 'ファイルサイズが大きすぎます（20MB以下）'); return; }
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -417,8 +487,10 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
         }
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        const resized = canvas.toDataURL('image/jpeg', 0.85);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { showError('errorBox', 'キャンバス処理に失敗しました（メモリ不足の可能性）'); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        const resized = canvas.toDataURL('image/jpeg', 0.75);
         imageBase64 = resized.split(',')[1]; imageMime = 'image/jpeg';
         document.getElementById('previewImg').src = resized;
         document.getElementById('uploadPlaceholder').style.display = 'none';
@@ -460,9 +532,15 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       showError(errorBoxId, `画像は最大${MAX_PAGE_IMAGES}枚までです`);
       return;
     }
-    const toAdd = imgFiles.slice(0, remaining);
+    let toAdd = imgFiles.slice(0, remaining);
     if (imgFiles.length > remaining) {
       showError(errorBoxId, `${imgFiles.length}枚のうち${remaining}枚のみ追加します（最大${MAX_PAGE_IMAGES}枚）`);
+    }
+    // ファイルサイズ上限チェック（修正：メモリ枯渇対策）
+    const oversized = toAdd.filter(f => f.size > 20 * 1024 * 1024);
+    if (oversized.length > 0) {
+      showError(errorBoxId, `${oversized.length}枚のファイルが大きすぎます（20MB以下）`);
+      toAdd = toAdd.filter(f => f.size <= 20 * 1024 * 1024);
     }
     toAdd.forEach(file => {
       const reader = new FileReader();
@@ -476,9 +554,15 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
           }
           const canvas = document.createElement('canvas');
           canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          const resized = canvas.toDataURL('image/jpeg', 0.88);
-          const entry   = { base64: resized.split(',')[1], name: sanitizeFileName(file.name) };
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { showError(errorBoxId, 'キャンバス処理に失敗しました（メモリ不足の可能性）'); return; }
+          ctx.drawImage(img, 0, 0, w, h);
+          const resized = canvas.toDataURL('image/jpeg', 0.78);
+          const entry   = {
+            base64: resized.split(',')[1],
+            mime: 'image/jpeg',  // キャンバスから生成されるため常にJPEG
+            name: sanitizeFileName(file.name)
+          };
           pageImages[mode].push(entry);
 
           // サムネイル（クロージャでentryを直接参照 → indexズレなし）
@@ -542,6 +626,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
           action:      'uploadImage',
           folderUrl,
           imageBase64: entry.base64,
+          imageMime:   entry.mime || 'image/jpeg',  // MIMEタイプを送信
           fileName:    'page_' + String(index + 1).padStart(3, '0') + '_' + Date.now() + '.jpg'
         }), 60000);
         const rawText = await res.text();
@@ -601,15 +686,9 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 
     try {
       appLog('本一覧取得開始');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-      let res;
-      try {
-        res = await fetch(gasUrl + '?action=getBooks', { signal: controller.signal });
-      } finally {
-        clearTimeout(timeoutId);
-      }
+      const res = await gasGet(gasUrl + '?action=getBooks', 30000);
       appLog(`getBooks レスポンス: ${res.status}`);
+      if (!res.ok) throw new Error(`HTTPエラー: ${res.status} — ${await res.text().substring(0, 120)}`);
       const rawText = await res.text();
       let json;
       try { json = JSON.parse(rawText); }
@@ -786,8 +865,14 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       const xhr = new XMLHttpRequest();
       xhr.open('POST', url);
       xhr.timeout = timeoutMs;
+      // GAS WebアプリへのクロスオリジンPOSTでpreflightを避けるため、simple requestにする。
+      // 本文はJSON文字列のままなので、GAS側の JSON.parse(e.postData.contents) はそのまま使える。
+      xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
       xhr.ontimeout = () => { const e = new Error(); e.name = 'AbortError'; reject(e); };
-      xhr.onerror  = () => reject(new Error('ネットワークエラー'));
+      xhr.onerror  = () => {
+        appLog(`ネットワークエラー: ${url}`, 'error');
+        reject(new Error('ネットワークエラー。GAS URL、Webアプリのデプロイ設定（全員/匿名ユーザーを含む）、新しいデプロイでURLが変わっていないかを確認してください'));
+      };
       xhr.onabort  = () => { const e = new Error(); e.name = 'AbortError'; reject(e); };
       xhr.onload   = () => resolve({
         ok:         xhr.status >= 200 && xhr.status < 300,
@@ -796,6 +881,28 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
         text:       () => Promise.resolve(xhr.responseText)
       });
       xhr.send(bodyStr);
+    });
+  }
+
+  // ── GAS GET ヘルパー（iOS Safari リダイレクト対応） ──
+  function gasGet(url, timeoutMs = 30000) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', url);
+      xhr.timeout = timeoutMs;
+      xhr.ontimeout = () => { const e = new Error(); e.name = 'AbortError'; reject(e); };
+      xhr.onerror  = () => {
+        appLog(`ネットワークエラー: ${url}`, 'error');
+        reject(new Error('ネットワークエラー。GAS URL、Webアプリのデプロイ設定（全員/匿名ユーザーを含む）、新しいデプロイでURLが変わっていないかを確認してください'));
+      };
+      xhr.onabort  = () => { const e = new Error(); e.name = 'AbortError'; reject(e); };
+      xhr.onload   = () => resolve({
+        ok:         xhr.status >= 200 && xhr.status < 300,
+        status:     xhr.status,
+        statusText: xhr.statusText,
+        text:       () => Promise.resolve(xhr.responseText)
+      });
+      xhr.send();
     });
   }
 
@@ -880,7 +987,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   // ── Service Worker登録 ───────────────────────────────
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/book-scanner/service-worker.js')
+      navigator.serviceWorker.register('./service-worker.js')
         .then(() => console.log('SW registered'))
         .catch(e => console.log('SW error:', e));
     });
@@ -888,7 +995,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
 
   // ── リセット ──────────────────────────────────────────
   function resetAll() {
-    imageBase64 = null; isSaving = false;
+    imageBase64 = null; imageMime = 'image/jpeg'; isSaving = false;
     currentFolderUrl = ''; currentBookTitle = '';
     pageImages.inline = [];
     refreshFileInput('fileInput', false);
@@ -911,6 +1018,17 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
     setRating(3);
     updateCount('f_summary', 'summaryCount');
     updateCount('f_memo',    'memoCount');
+
+    // フォームフィールドをクリア（バグ修正）
+    document.getElementById('f_title').value = '';
+    document.getElementById('f_author').value = '';
+    document.getElementById('f_genre').value = '';
+    document.getElementById('f_summary').value = '';
+    document.getElementById('f_memo').value = '';
+    document.getElementById('f_date').value = '';
+
+    // 入力欄を有効化（バグ修正）
+    enableFields(true);
   }
 </script>
 </body>
