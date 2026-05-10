@@ -129,7 +129,7 @@ book-scanner/
 
 | 変数 | 説明 |
 |------|------|
-| `apiKey` | Anthropic APIキー（sessionStorageに保存） |
+| `apiKey` | Anthropic APIキー（localStorageに保存） |
 | `gasUrl` | GAS WebアプリURL（localStorageに保存） |
 | `imageBase64` | 表紙画像のBase64データ |
 | `currentRating` | 選択中の星評価（デフォルト3） |
@@ -148,6 +148,14 @@ book-scanner/
 
 **重要：**「新しいデプロイ」を作成するとURLが変わる。アプリのGAS URL設定を必ず更新すること。  
 URLを変えずに更新する場合は「デプロイを管理」→既存デプロイの「編集」→「新しいバージョン」を選択。
+
+### デプロイ後の確認チェックリスト（必須）
+
+再デプロイのたびに認証がリセットされる場合があり、確認しないと「ネットワークエラー」で気づけない。
+
+- [ ] **① testAuth() をGASエディタから実行**（「新しいデプロイ」を新規作成したときのみ。「新しいバージョン」更新時は不要）
+- [ ] **② ブラウザでGAS URLに直接アクセスして `{"status":"running"}` が返るか確認**
+- [ ] **③ スマホのSafariから保存テストを1件行う**
 
 ---
 

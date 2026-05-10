@@ -139,7 +139,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       <button class="btn-sm" onclick="toggleApiKeyVisibility()">👁</button>
       <button class="btn-sm" onclick="saveApiKey()">保存</button>
     </div>
-    <p>タブを閉じると消えます（セッション限り）</p>
+    <p>このデバイスに保存されます（次回以降も保持）</p>
   </div>
 
   <div class="config-box" id="configBox">
@@ -305,7 +305,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   let selectedFolderUrl = '';
   const pageImages     = { inline: [], add: [] };
 
-  let apiKey = sessionStorage.getItem('apiKey') || '';
+  let apiKey = localStorage.getItem('apiKey') || '';
   let gasUrl = localStorage.getItem('gasUrl') || '';
 
   // ── ログ管理 ──────────────────────────────────────────
@@ -380,10 +380,10 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       return;
     }
     apiKey = val;
-    sessionStorage.setItem('apiKey', apiKey);
+    localStorage.setItem('apiKey', apiKey);
     document.getElementById('apiSavedBadge').style.display = 'inline';
     document.getElementById('apiBox').classList.add('saved');
-    appLog('APIキーを保存しました（セッション中のみ有効）');
+    appLog('APIキーを保存しました（このデバイスに永続保存）');
   }
   function toggleApiKeyVisibility() {
     const input = document.getElementById('apiKeyInput');

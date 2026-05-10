@@ -1,4 +1,4 @@
-const CACHE_NAME = 'book-scanner-v3';
+const CACHE_NAME = 'book-scanner-v4';
 const ASSETS = [
   '/book-scanner/',
   '/book-scanner/index.html',
