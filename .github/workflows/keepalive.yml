@@ -14,11 +14,18 @@ jobs:
         env:
           GAS_URL: ${{ secrets.GAS_URL }}
         run: |
+          # GASのexec URLだけをgrepで抽出する。単純な空白除去では全角スペースやNBSP等の
+          # マルチバイト不可視文字が残り、curlが "URL malformed"(exit 3) で落ちる事象があったため。
           if [ -z "${GAS_URL}" ]; then
             echo "::error::GAS_URL secret is not set"
             exit 1
           fi
-          status=$(curl -sS -o /dev/null -w "%{http_code}" -L --max-time 30 "${GAS_URL}?action=ping")
+          url=$(printf '%s' "${GAS_URL}" | grep -oiE 'https://script\.google\.com/macros/s/[A-Za-z0-9_-]+/exec' | head -1)
+          if [ -z "${url}" ]; then
+            echo "::error::GAS_URL secret に正しいGAS URL（https://script.google.com/macros/s/.../exec）が見つかりません。不可視文字や余計な文字の混入、URL自体の誤りを確認し、貼り直してください。"
+            exit 1
+          fi
+          status=$(curl -sS -o /dev/null -w "%{http_code}" -L --max-time 30 "${url}?action=ping")
           echo "HTTP status: ${status}"
           if [ "${status}" != "200" ]; then
             echo "::error::Ping failed with HTTP ${status}"
