@@ -69,6 +69,7 @@ function keepAlive() {
 
 ## 関連ファイル
 
+- [github_actions_url_malformed.md](github_actions_url_malformed.md) — 外部ping（GitHub Actions）側の失敗事例（URL malformed・別問題）
 - [gas_auth_network_error.md](gas_auth_network_error.md) — 詳細な調査経緯・なぜなぜ分析・観察事実
 - [network_error_recurring.md](network_error_recurring.md) — 初期対応（CORS / エラーメッセージ改善）
 - [../コード.gs](../コード.gs) — `keepAlive` / `setupKeepAliveTrigger` の実装
