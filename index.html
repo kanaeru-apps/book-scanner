@@ -927,6 +927,9 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       summary: document.getElementById('f_summary').value,
       memo:    document.getElementById('f_memo').value,
       date:    document.getElementById('f_date').value,
+      // 解析に使った表紙画像を一緒に送り、スプレッドシートのC列にセル内画像として埋め込む
+      coverImageBase64: imageBase64 || '',
+      coverImageMime:   imageMime   || 'image/jpeg',
     };
 
     try {
