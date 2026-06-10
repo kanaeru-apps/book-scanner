@@ -346,6 +346,7 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       document.getElementById('gasUrlInput').value = gasUrl;
       document.getElementById('savedBadge').style.display = 'inline';
       document.getElementById('configBox').classList.add('saved');
+      checkGasHealth();
     }
     document.getElementById('stars').addEventListener('keydown', onStarKeydown);
 
@@ -358,6 +359,23 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
       }
     }
   };
+
+  // ── 起動時のGAS疎通チェック（認証切れを保存前に検知する）──
+  // GASのOAuth承認が失効すると403になり、保存時に初めて「ネットワークエラー」が出ていた。
+  // 起動時にpingを打ち、失敗したら復旧手順つきの警告を消えない形で表示する。
+  async function checkGasHealth() {
+    try {
+      const res = await gasGet(gasUrl + '?action=ping', 15000);
+      const json = JSON.parse(await res.text());
+      if (!res.ok || !json.ok) throw new Error('HTTP ' + res.status);
+      appLog('GAS疎通チェックOK（v' + (json.version || '?') + '）');
+    } catch (e) {
+      appLog('GAS疎通チェック失敗: ' + e.message, 'error');
+      showError('errorBox',
+        'GASに接続できません。認証切れの可能性があります。【復旧手順】スプレッドシート「読書記録」を開く → 拡張機能 → Apps Script → 関数 testAuth を選んで実行 → 「許可」をクリック',
+        true);
+    }
+  }
 
   // ── タブ切り替え（data-tab属性で判定） ───────────────
   function switchTab(tab) {
@@ -413,12 +431,13 @@ body { min-height: 100vh; background: #1c1510; background-image: radial-gradient
   function updateCount(fieldId, countId) {
     document.getElementById(countId).textContent = document.getElementById(fieldId).value.length + '文字';
   }
-  function showError(boxId, msg) {
+  // sticky=true のときは自動で消さない（認証切れ警告など、対処が必要なもの用）
+  function showError(boxId, msg, sticky = false) {
     const box = document.getElementById(boxId);
     box.textContent = '⚠ ' + msg; box.classList.add('show');
     appLog(msg, 'error');
     if (box.dataset.timerId) clearTimeout(parseInt(box.dataset.timerId));
-    box.dataset.timerId = setTimeout(() => clearError(boxId), 5000);
+    box.dataset.timerId = sticky ? '' : setTimeout(() => clearError(boxId), 5000);
   }
   function clearError(boxId) {
     const box = document.getElementById(boxId);

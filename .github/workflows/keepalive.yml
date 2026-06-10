@@ -5,6 +5,9 @@ on:
     - cron: '17 * * * *'
   workflow_dispatch:
 
+permissions:
+  actions: read
+
 jobs:
   ping:
     runs-on: ubuntu-latest
@@ -32,3 +35,60 @@ jobs:
             exit 1
           fi
           echo "Keep-alive ping successful"
+
+      # 直前の実行結果を取得（成功⇄失敗の「変化したときだけ」Chatworkに通知し、毎時スパムを防ぐ）
+      - name: Get previous run conclusion
+        id: prev
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          prev=$(curl -sS -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/keepalive.yml/runs?per_page=2&status=completed" \
+            | jq -r '.workflow_runs[0].conclusion // "unknown"')
+          echo "conclusion=${prev}" >> "$GITHUB_OUTPUT"
+          echo "previous run conclusion: ${prev}"
+
+      # 失敗に転じたとき：認証切れの可能性をChatworkへ即通知（復旧手順つき）
+      - name: Notify Chatwork (failure)
+        if: failure() && steps.prev.outputs.conclusion != 'failure'
+        env:
+          CHATWORK_API_TOKEN: ${{ secrets.CHATWORK_API_TOKEN }}
+          CHATWORK_ROOM_ID: ${{ secrets.CHATWORK_ROOM_ID }}
+        run: |
+          if [ -z "${CHATWORK_API_TOKEN}" ] || [ -z "${CHATWORK_ROOM_ID}" ]; then
+            echo "::warning::CHATWORK_API_TOKEN / CHATWORK_ROOM_ID が未設定のため通知をスキップしました"
+            exit 0
+          fi
+          body=$(printf '%s\n' \
+            "[To:326753]" \
+            "[info][title]⚠️ Book Scanner のGASが応答しません[/title]keep-alive ping が失敗しました。GASの認証切れ（OAuth承認の失効）の可能性が高いです。" \
+            "" \
+            "【復旧手順（1分）】" \
+            "1. スプレッドシート「読書記録」を開く" \
+            "https://docs.google.com/spreadsheets/d/1FDvkyHBvSolwCKK0r1X4-GRcOOaCH5w8dxmaNWFNOFs/edit" \
+            "2. メニュー「拡張機能」→「Apps Script」" \
+            "3. 関数 testAuth を選んで「実行」→「許可」をクリック" \
+            "" \
+            "※ 復旧すると「復旧しました」の通知が届きます[/info]")
+          curl -sS -X POST "https://api.chatwork.com/v2/rooms/${CHATWORK_ROOM_ID}/messages" \
+            -H "X-ChatWorkToken: ${CHATWORK_API_TOKEN}" \
+            --data-urlencode "body=${body}" \
+            -o /dev/null -w "Chatwork notify HTTP %{http_code}\n"
+
+      # 失敗から復旧したとき：復旧完了をChatworkへ通知
+      - name: Notify Chatwork (recovered)
+        if: success() && steps.prev.outputs.conclusion == 'failure'
+        env:
+          CHATWORK_API_TOKEN: ${{ secrets.CHATWORK_API_TOKEN }}
+          CHATWORK_ROOM_ID: ${{ secrets.CHATWORK_ROOM_ID }}
+        run: |
+          if [ -z "${CHATWORK_API_TOKEN}" ] || [ -z "${CHATWORK_ROOM_ID}" ]; then
+            echo "::warning::CHATWORK_API_TOKEN / CHATWORK_ROOM_ID が未設定のため通知をスキップしました"
+            exit 0
+          fi
+          body="[info][title]✅ Book Scanner のGASが復旧しました[/title]keep-alive ping が成功に戻りました。アプリから通常どおり保存できます。[/info]"
+          curl -sS -X POST "https://api.chatwork.com/v2/rooms/${CHATWORK_ROOM_ID}/messages" \
+            -H "X-ChatWorkToken: ${CHATWORK_API_TOKEN}" \
+            --data-urlencode "body=${body}" \
+            -o /dev/null -w "Chatwork notify HTTP %{http_code}\n"
