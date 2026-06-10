@@ -4,8 +4,8 @@
   "description": "表紙を読み取り、蔵書リストへ自動登録",
   "start_url": "/book-scanner/",
   "display": "standalone",
-  "background_color": "#1c1510",
-  "theme_color": "#c8952a",
+  "background_color": "#0e0d0b",
+  "theme_color": "#0e0d0b",
   "orientation": "portrait",
   "icons": [
     {
