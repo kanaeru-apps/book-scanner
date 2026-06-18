@@ -14,22 +14,27 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Ping GAS endpoint
+        id: ping
         env:
           GAS_URL: ${{ secrets.GAS_URL }}
         run: |
           # GASのexec URLだけをgrepで抽出する。単純な空白除去では全角スペースやNBSP等の
           # マルチバイト不可視文字が残り、curlが "URL malformed"(exit 3) で落ちる事象があったため。
           if [ -z "${GAS_URL}" ]; then
+            echo "status=NO_SECRET" >> "$GITHUB_OUTPUT"
             echo "::error::GAS_URL secret is not set"
             exit 1
           fi
           url=$(printf '%s' "${GAS_URL}" | grep -oiE 'https://script\.google\.com/macros/s/[A-Za-z0-9_-]+/exec' | head -1)
           if [ -z "${url}" ]; then
+            echo "status=BAD_URL" >> "$GITHUB_OUTPUT"
             echo "::error::GAS_URL secret に正しいGAS URL（https://script.google.com/macros/s/.../exec）が見つかりません。不可視文字や余計な文字の混入、URL自体の誤りを確認し、貼り直してください。"
             exit 1
           fi
           status=$(curl -sS -o /dev/null -w "%{http_code}" -L --max-time 30 "${url}?action=ping")
           echo "HTTP status: ${status}"
+          # 通知ステップが原因切り分けに使えるよう、HTTPステータスを必ず出力に残す（exit前に書く）
+          echo "status=${status}" >> "$GITHUB_OUTPUT"
           if [ "${status}" != "200" ]; then
             echo "::error::Ping failed with HTTP ${status}"
             exit 1
@@ -49,26 +54,59 @@ jobs:
           echo "conclusion=${prev}" >> "$GITHUB_OUTPUT"
           echo "previous run conclusion: ${prev}"
 
-      # 失敗に転じたとき：認証切れの可能性をChatworkへ即通知（復旧手順つき）
+      # 失敗に転じたとき：HTTPステータスから原因を切り分けてChatworkへ即通知（復旧手順つき）
       - name: Notify Chatwork (failure)
         if: failure() && steps.prev.outputs.conclusion != 'failure'
         env:
           CHATWORK_API_TOKEN: ${{ secrets.CHATWORK_API_TOKEN }}
           CHATWORK_ROOM_ID: ${{ secrets.CHATWORK_ROOM_ID }}
+          PING_STATUS: ${{ steps.ping.outputs.status }}
         run: |
           if [ -z "${CHATWORK_API_TOKEN}" ] || [ -z "${CHATWORK_ROOM_ID}" ]; then
             echo "::warning::CHATWORK_API_TOKEN / CHATWORK_ROOM_ID が未設定のため通知をスキップしました"
             exit 0
           fi
+          # HTTPステータスごとに「疑うべき原因」と「最初に試す対処」を出し分ける。
+          # 同じ失敗でも原因（OAuth失効 / Webアプリのアクセス権・デプロイ / Google障害 / 設定不備）が
+          # 異なり、対処を取り違えると直らないため。
+          case "${PING_STATUS}" in
+            401|403)
+              diag="原因の候補①：Webアプリのデプロイ失効／アクセス権（最有力）。②：OAuth承認の失効。"
+              fix=$(printf '%s\n' \
+                "【まず試す：デプロイのやり直し（アクセス権が「全員」でも403になることがある）】" \
+                "1. スプレッドシート「読書記録」→ 拡張機能 → Apps Script" \
+                "2. 「デプロイを管理」→ 鉛筆（編集）→ バージョン=「新バージョン」→ デプロイ" \
+                "3. 新しいexec URLを (a)アプリのGAS URL設定 (b)GitHubのGAS_URLシークレット の両方に貼り替え" \
+                "" \
+                "【それでも直らなければ：OAuth再承認】" \
+                "4. 関数 testAuth を選んで「実行」→「許可」をクリック") ;;
+            5*|000)
+              diag="原因の候補：Google Apps Script 側の一時的な障害／タイムアウトの可能性。"
+              fix=$(printf '%s\n' \
+                "【対処】" \
+                "1. 30分ほど待って自動pingの復旧通知が来るか確認" \
+                "2. 来なければ Apps Script の実行ログ・Googleの稼働状況を確認") ;;
+            NO_SECRET|BAD_URL)
+              diag="原因：GitHubの GAS_URL シークレットが未設定／不正（不可視文字混入やURL誤り）。"
+              fix=$(printf '%s\n' \
+                "【対処】" \
+                "1. GitHub → リポジトリ Settings → Secrets → GAS_URL を開く" \
+                "2. 正しいexec URL（https://script.google.com/macros/s/.../exec）を貼り直す") ;;
+            *)
+              diag="原因不明（HTTP ${PING_STATUS}）。アクセス権・デプロイ・OAuthの順で確認してください。"
+              fix=$(printf '%s\n' \
+                "1. デプロイを管理でアクセス=全員 を確認、必要なら新バージョンで再デプロイ＋URL貼り替え" \
+                "2. 関数 testAuth を実行→許可") ;;
+          esac
           body=$(printf '%s\n' \
             "[To:326753]" \
-            "[info][title]⚠️ Book Scanner のGASが応答しません[/title]keep-alive ping が失敗しました。GASの認証切れ（OAuth承認の失効）の可能性が高いです。" \
+            "[info][title]⚠️ Book Scanner のGASが応答しません（HTTP ${PING_STATUS}）[/title]keep-alive ping が失敗しました。" \
+            "${diag}" \
             "" \
-            "【復旧手順（1分）】" \
-            "1. スプレッドシート「読書記録」を開く" \
+            "対象スプレッドシート：" \
             "https://docs.google.com/spreadsheets/d/1FDvkyHBvSolwCKK0r1X4-GRcOOaCH5w8dxmaNWFNOFs/edit" \
-            "2. メニュー「拡張機能」→「Apps Script」" \
-            "3. 関数 testAuth を選んで「実行」→「許可」をクリック" \
+            "" \
+            "${fix}" \
             "" \
             "※ 復旧すると「復旧しました」の通知が届きます[/info]")
           curl -sS -X POST "https://api.chatwork.com/v2/rooms/${CHATWORK_ROOM_ID}/messages" \
