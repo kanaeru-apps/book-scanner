@@ -358,19 +358,29 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
     }
   };
 
-  // ── 起動時のGAS疎通チェック（認証切れを保存前に検知する）──
-  // GASのOAuth承認が失効すると403になり、保存時に初めて「ネットワークエラー」が出ていた。
-  // 起動時にpingを打ち、失敗したら復旧手順つきの警告を消えない形で表示する。
+  // ── 起動時のGAS疎通チェック（壊れていたら保存前に検知する）──
+  // アプリを開いた瞬間に ?action=ping を打ち、失敗したら「正しい直し方」つきの
+  // 消えない警告を出す。
+  // 注意：失敗の主因は2種類ある。
+  //   ① Webアプリのデプロイ失効／アクセス権（403）→ まず「再デプロイ＋URL貼り替え」で直る（2026-06-17の停止はこれ）
+  //   ② OAuth承認の失効 → testAuth＋「許可」で直る（2026-06-04の停止はこれ）
+  // 取り違えると直らないので、まず①、ダメなら②の順で案内する。
   async function checkGasHealth() {
+    let status = 0;
     try {
       const res = await gasGet(gasUrl + '?action=ping', 15000);
+      status = res.status;
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = JSON.parse(await res.text());
-      if (!res.ok || !json.ok) throw new Error('HTTP ' + res.status);
+      if (!json.ok) throw new Error('応答が不正です');
       appLog('GAS疎通チェックOK（v' + (json.version || '?') + '）');
     } catch (e) {
-      appLog('GAS疎通チェック失敗: ' + e.message, 'error');
+      const code = status ? '（HTTP ' + status + '）' : '';
+      appLog('GAS疎通チェック失敗' + code + ': ' + e.message, 'error');
       showError('errorBox',
-        'GASに接続できません。認証切れの可能性があります。【復旧手順】スプレッドシート「読書記録」を開く → 拡張機能 → Apps Script → 関数 testAuth を選んで実行 → 「許可」をクリック',
+        'サーバー（GAS）に接続できません' + code + '。いまは本を保存できない状態です。' +
+        '【直し方①・まずこれを試す】スプレッドシート「読書記録」を開く → 拡張機能 → Apps Script →「デプロイを管理」→ ✏️編集 → バージョンを「新バージョン」にして「デプロイ」→ 表示された新しいURLを、このアプリのURL欄に貼り替えて保存。 ' +
+        '【直し方②・①で直らない時だけ】同じApps Script画面で関数 testAuth を選んで実行 →「許可」をクリック。',
         true);
     }
   }
