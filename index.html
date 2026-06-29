@@ -223,6 +223,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
         <textarea id="chatInput" class="chat-input" placeholder="例：リーダーシップについて学びたい（Ctrl+Enterで送信）" rows="2" onkeydown="if(event.ctrlKey&&event.key==='Enter'){event.preventDefault();sendChat();}"></textarea>
         <button class="chat-send-btn" id="chatSendBtn" onclick="sendChat()">送信</button>
       </div>
+      <button onclick="resetChat()" style="width:100%;margin-top:0.5rem;padding:0.5rem;background:transparent;border:1px solid #383428;border-radius:4px;color:#7d7567;font-size:0.75rem;font-family:inherit;cursor:pointer;">🔄 新しい相談を始める</button>
       <div class="error-box" id="chatErrorBox"></div>
     </div>
   </div>
@@ -363,6 +364,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
   let apiKey    = localStorage.getItem('apiKey')    || '';
   let gasUrl    = localStorage.getItem('gasUrl')    || '';
   let geminiKey = localStorage.getItem('geminiKey') || '';
+  const chatHistory = [];
 
   // ── ログ管理 ──────────────────────────────────────────
   const appLogs = [];
@@ -1130,35 +1132,52 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
     const thinkingInner = addChatBubble('ai', '考え中…');
 
     try {
-      // 書籍データ取得（失敗してもチャット自体は続行）
-      let booksText = '';
-      try {
-        const res = await gasGet(gasUrl + '?action=getBooks', 30000);
-        if (res.ok) {
-          const json = JSON.parse(await res.text());
-          if (json.success && json.books && json.books.length > 0) {
-            booksText = json.books.map(b =>
-              `・${b.title}（${b.author || '著者不明'}）ジャンル:${b.genre || '不明'} 評価:${b.rating || '-'}/5` +
-              (b.summary ? ' 要約:' + b.summary.substring(0, 60) : '') +
-              (b.memo    ? ' メモ:'  + b.memo.substring(0, 60)    : '')
-            ).join('\n');
+      // 最初のメッセージのときだけ書籍データを取得してプロンプトに埋め込む
+      let userMessage = query;
+      if (chatHistory.length === 0) {
+        let booksText = '';
+        try {
+          const res = await gasGet(gasUrl + '?action=getBooks', 30000);
+          if (res.ok) {
+            const json = JSON.parse(await res.text());
+            if (json.success && json.books && json.books.length > 0) {
+              booksText = json.books.map(b =>
+                `・${b.title}（${b.author || '著者不明'}）ジャンル:${b.genre || '不明'} 評価:${b.rating || '-'}/5` +
+                (b.summary ? ' 要約:' + b.summary.substring(0, 60) : '') +
+                (b.memo    ? ' メモ:'  + b.memo.substring(0, 60)    : '')
+              ).join('\n');
+            }
           }
-        }
-      } catch(_) { booksText = ''; }
+        } catch(_) {}
 
-      const prompt = booksText
-        ? `あなたは読書アドバイザーです。以下はユーザーの読書記録です：\n\n${booksText}\n\n相談内容：「${query}」\n\n上記の読書記録を参考に、以下を提案してください：\n1. 既読の本の中で相談内容に関連するもの（あれば、なぜ関連するかも説明）\n2. まだ読んでいないおすすめの本を2〜3冊（タイトル・著者・なぜおすすめか）\n\n日本語で、簡潔にわかりやすく回答してください。`
-        : `あなたは読書アドバイザーです。相談内容：「${query}」\n\nおすすめの本を2〜3冊提案してください（タイトル・著者・なぜおすすめか）。日本語で回答してください。`;
+        userMessage = booksText
+          ? `あなたは読書アドバイザーです。以下は私の読書記録です：\n\n${booksText}\n\nこの読書記録を踏まえて相談に乗ってください。回答は日本語で、簡潔にお願いします。\n\n相談：${query}`
+          : `あなたは読書アドバイザーです。以下の相談に日本語で回答してください。\n\n${query}`;
+      }
 
-      appLog('Gemini API呼び出し開始');
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        }
-      );
+      // 履歴にユーザーメッセージを追加
+      chatHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+
+      appLog('Gemini API呼び出し（履歴:' + chatHistory.length + '件）');
+
+      // リトライ付きAPIコール（503対策）
+      let res, lastErr;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents: chatHistory })
+            }
+          );
+          if (res.status !== 503) break;
+          lastErr = new Error('Gemini APIエラー 503: サーバーが混み合っています');
+          await new Promise(r => setTimeout(r, 2000));
+        } catch(e) { lastErr = e; break; }
+      }
+      if (!res) throw lastErr;
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -1167,17 +1186,41 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 
       const data = await res.json();
       const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || '回答を取得できませんでした';
+
+      // 履歴にAIの回答を追加
+      chatHistory.push({ role: 'model', parts: [{ text: answer }] });
+
       thinkingInner.textContent = answer;
       thinkingInner.parentElement.classList.remove('thinking');
       appLog('Gemini APIレスポンス受信完了');
 
     } catch(e) {
+      // エラー時は最後のユーザーメッセージを履歴から削除してリトライ可能にする
+      if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
+        chatHistory.pop();
+      }
       thinkingInner.textContent = 'エラー: ' + e.message;
       thinkingInner.parentElement.classList.remove('thinking');
       appLog('AI相談エラー: ' + e.message, 'error');
     } finally {
       btn.disabled = false;
     }
+  }
+
+  function resetChat() {
+    chatHistory.length = 0;
+    const messages = document.getElementById('chatMessages');
+    messages.innerHTML = `
+      <div class="chat-placeholder" id="chatPlaceholder">
+        <div class="chat-icon">📚</div>
+        <div class="chat-intro">あなたの読書記録をもとに、<br>最適な本を提案します</div>
+        <div class="chat-examples">
+          <div class="chat-example" onclick="useExample(this)">マーケティングについて学びたい</div>
+          <div class="chat-example" onclick="useExample(this)">モチベーションが上がる本が読みたい</div>
+          <div class="chat-example" onclick="useExample(this)">ビジネスの基礎を学び直したい</div>
+        </div>
+      </div>`;
+    appLog('チャット履歴をリセットしました');
   }
 
   // ── Service Worker登録 ───────────────────────────────
