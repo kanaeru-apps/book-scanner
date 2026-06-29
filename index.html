@@ -119,6 +119,26 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 .progress-bar.show { display: block; }
 .progress-fill { height: 100%; background: linear-gradient(90deg, #d2a440, #ecd084); border-radius: 2px; transition: width 0.3s; }
 .footer { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; color: #6b6457; }
+/* ── AIチャット ── */
+.chat-area { display: flex; flex-direction: column; }
+.chat-messages { min-height: 260px; max-height: 420px; overflow-y: auto; margin-bottom: 0.8rem; display: flex; flex-direction: column; gap: 0.8rem; }
+.chat-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1rem; text-align: center; }
+.chat-icon { font-size: 2.2rem; margin-bottom: 0.8rem; opacity: 0.8; }
+.chat-intro { color: #a89f8f; font-size: 0.85rem; line-height: 1.6; margin-bottom: 1rem; }
+.chat-examples { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+.chat-example { background: rgba(255,255,255,0.04); border: 1px solid #383428; border-radius: 4px; padding: 0.6rem 0.8rem; color: #b3a892; font-size: 0.8rem; cursor: pointer; text-align: left; transition: all 0.2s; }
+.chat-example:hover { border-color: rgba(224,179,76,0.45); color: #eccb6e; background: rgba(224,179,76,0.05); }
+.chat-bubble { max-width: 100%; animation: fadeIn 0.3s ease; }
+.chat-bubble-inner { padding: 0.7rem 0.9rem; border-radius: 4px; font-size: 0.83rem; line-height: 1.65; }
+.chat-bubble.user .chat-bubble-inner { background: rgba(224,179,76,0.14); border: 1px solid rgba(224,179,76,0.3); color: #f0d188; }
+.chat-bubble.ai .chat-bubble-inner { background: rgba(255,255,255,0.04); border: 1px solid #2b2820; color: #ece7dc; white-space: pre-wrap; }
+.chat-bubble.thinking .chat-bubble-inner { color: #968c7a; font-style: italic; }
+.chat-input-area { display: flex; gap: 0.5rem; align-items: flex-end; }
+.chat-input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #383428; border-radius: 4px; padding: 0.65rem 0.8rem; color: #ece7dc; font-size: 0.85rem; font-family: inherit; resize: none; line-height: 1.5; }
+.chat-input:focus { outline: none; border-color: rgba(224,179,76,0.55); }
+.chat-send-btn { background: linear-gradient(135deg, #d2a440, #ecd084); border: none; border-radius: 4px; padding: 0.65rem 1.1rem; color: #14110a; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; transition: all 0.2s; white-space: nowrap; }
+.chat-send-btn:hover { opacity: 0.85; }
+.chat-send-btn:disabled { background: rgba(224,179,76,0.15); color: #968c7a; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -141,6 +161,19 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
       <button class="btn-sm" onclick="saveApiKey()">保存</button>
     </div>
     <p>このデバイスに保存されます（次回以降も保持）</p>
+  </div>
+
+  <div class="config-box" id="geminiBox">
+    <div class="config-label">
+      <span>✨ Gemini APIキー</span>
+      <span class="badge" id="geminiSavedBadge" style="display:none">✦ 設定済み</span>
+    </div>
+    <div class="config-row">
+      <input type="password" id="geminiKeyInput" placeholder="AIza..." onkeydown="if(event.key==='Enter') saveGeminiKey()">
+      <button class="btn-sm" onclick="toggleGeminiKeyVisibility()">👁</button>
+      <button class="btn-sm" onclick="saveGeminiKey()">保存</button>
+    </div>
+    <p>Google AI Studio で取得。AIに相談機能で使用（無料枠あり）</p>
   </div>
 
   <div class="config-box" id="configBox">
@@ -167,12 +200,35 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
   </div>
 
   <div class="tab-bar">
-    <button class="tab-btn active" data-tab="register" onclick="switchTab('register')">📖 新規登録</button>
+    <button class="tab-btn active" data-tab="ai" onclick="switchTab('ai')">🤖 AIに相談</button>
+    <button class="tab-btn" data-tab="register" onclick="switchTab('register')">📖 新規登録</button>
     <button class="tab-btn" data-tab="addimage" onclick="switchTab('addimage')">🖼 画像を追加</button>
   </div>
 
+  <!-- ── AIに相談タブ ── -->
+  <div class="tab-content active" id="tab-ai">
+    <div class="chat-area">
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-placeholder" id="chatPlaceholder">
+          <div class="chat-icon">📚</div>
+          <div class="chat-intro">あなたの読書記録をもとに、<br>最適な本を提案します</div>
+          <div class="chat-examples">
+            <div class="chat-example" onclick="useExample(this)">マーケティングについて学びたい</div>
+            <div class="chat-example" onclick="useExample(this)">モチベーションが上がる本が読みたい</div>
+            <div class="chat-example" onclick="useExample(this)">ビジネスの基礎を学び直したい</div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <textarea id="chatInput" class="chat-input" placeholder="例：リーダーシップについて学びたい（Ctrl+Enterで送信）" rows="2" onkeydown="if(event.ctrlKey&&event.key==='Enter'){event.preventDefault();sendChat();}"></textarea>
+        <button class="chat-send-btn" id="chatSendBtn" onclick="sendChat()">送信</button>
+      </div>
+      <div class="error-box" id="chatErrorBox"></div>
+    </div>
+  </div>
+
   <!-- ── 新規登録タブ ── -->
-  <div class="tab-content active" id="tab-register">
+  <div class="tab-content" id="tab-register">
     <div class="upload-area" id="uploadArea" ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
       <div id="uploadPlaceholder">
         <div class="upload-icon">📖</div>
@@ -304,8 +360,9 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
   let selectedFolderUrl = '';
   const pageImages     = { inline: [], add: [] };
 
-  let apiKey = localStorage.getItem('apiKey') || '';
-  let gasUrl = localStorage.getItem('gasUrl') || '';
+  let apiKey    = localStorage.getItem('apiKey')    || '';
+  let gasUrl    = localStorage.getItem('gasUrl')    || '';
+  let geminiKey = localStorage.getItem('geminiKey') || '';
 
   // ── ログ管理 ──────────────────────────────────────────
   const appLogs = [];
@@ -339,6 +396,11 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
       document.getElementById('apiKeyInput').value = apiKey;
       document.getElementById('apiSavedBadge').style.display = 'inline';
       document.getElementById('apiBox').classList.add('saved');
+    }
+    if (geminiKey) {
+      document.getElementById('geminiKeyInput').value = geminiKey;
+      document.getElementById('geminiSavedBadge').style.display = 'inline';
+      document.getElementById('geminiBox').classList.add('saved');
     }
     if (gasUrl) {
       document.getElementById('gasUrlInput').value = gasUrl;
@@ -1013,6 +1075,109 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
     el.focus(); el.select();
     try { document.execCommand('copy'); } catch(_) {}
     document.body.removeChild(el);
+  }
+
+  // ── Gemini APIキー設定 ────────────────────────────────
+  function saveGeminiKey() {
+    const val = document.getElementById('geminiKeyInput').value.trim();
+    if (!val) { alert('APIキーを入力してください'); return; }
+    if (!val.startsWith('AIza')) { alert('無効なAPIキーです（AIzaで始まる必要があります）'); return; }
+    geminiKey = val;
+    localStorage.setItem('geminiKey', geminiKey);
+    document.getElementById('geminiSavedBadge').style.display = 'inline';
+    document.getElementById('geminiBox').classList.add('saved');
+    appLog('Gemini APIキーを保存しました');
+  }
+  function toggleGeminiKeyVisibility() {
+    const input = document.getElementById('geminiKeyInput');
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+
+  // ── AIチャット ────────────────────────────────────────
+  function useExample(el) {
+    document.getElementById('chatInput').value = el.textContent;
+    sendChat();
+  }
+
+  function addChatBubble(role, text) {
+    const placeholder = document.getElementById('chatPlaceholder');
+    if (placeholder) placeholder.remove();
+    const messages = document.getElementById('chatMessages');
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + role + (role === 'ai' && text === '考え中…' ? ' thinking' : '');
+    const inner = document.createElement('div');
+    inner.className = 'chat-bubble-inner';
+    inner.textContent = text;
+    bubble.appendChild(inner);
+    messages.appendChild(bubble);
+    messages.scrollTop = messages.scrollHeight;
+    return inner;
+  }
+
+  async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const query = input.value.trim();
+    if (!query) return;
+    if (!geminiKey) { showError('chatErrorBox', 'Gemini APIキーを設定してください'); return; }
+    if (!gasUrl)    { showError('chatErrorBox', 'GAS WebアプリURLを設定してください'); return; }
+
+    const btn = document.getElementById('chatSendBtn');
+    btn.disabled = true;
+    input.value = '';
+    clearError('chatErrorBox');
+
+    addChatBubble('user', query);
+    const thinkingInner = addChatBubble('ai', '考え中…');
+
+    try {
+      // 書籍データ取得（失敗してもチャット自体は続行）
+      let booksText = '';
+      try {
+        const res = await gasGet(gasUrl + '?action=getBooks', 30000);
+        if (res.ok) {
+          const json = JSON.parse(await res.text());
+          if (json.success && json.books && json.books.length > 0) {
+            booksText = json.books.map(b =>
+              `・${b.title}（${b.author || '著者不明'}）ジャンル:${b.genre || '不明'} 評価:${b.rating || '-'}/5` +
+              (b.summary ? ' 要約:' + b.summary.substring(0, 60) : '') +
+              (b.memo    ? ' メモ:'  + b.memo.substring(0, 60)    : '')
+            ).join('\n');
+          }
+        }
+      } catch(_) { booksText = ''; }
+
+      const prompt = booksText
+        ? `あなたは読書アドバイザーです。以下はユーザーの読書記録です：\n\n${booksText}\n\n相談内容：「${query}」\n\n上記の読書記録を参考に、以下を提案してください：\n1. 既読の本の中で相談内容に関連するもの（あれば、なぜ関連するかも説明）\n2. まだ読んでいないおすすめの本を2〜3冊（タイトル・著者・なぜおすすめか）\n\n日本語で、簡潔にわかりやすく回答してください。`
+        : `あなたは読書アドバイザーです。相談内容：「${query}」\n\nおすすめの本を2〜3冊提案してください（タイトル・著者・なぜおすすめか）。日本語で回答してください。`;
+
+      appLog('Gemini API呼び出し開始');
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error('Gemini APIエラー ' + res.status + ': ' + (err?.error?.message || res.statusText));
+      }
+
+      const data = await res.json();
+      const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || '回答を取得できませんでした';
+      thinkingInner.textContent = answer;
+      thinkingInner.parentElement.classList.remove('thinking');
+      appLog('Gemini APIレスポンス受信完了');
+
+    } catch(e) {
+      thinkingInner.textContent = 'エラー: ' + e.message;
+      thinkingInner.parentElement.classList.remove('thinking');
+      appLog('AI相談エラー: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   // ── Service Worker登録 ───────────────────────────────
