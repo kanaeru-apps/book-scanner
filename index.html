@@ -1158,7 +1158,12 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
       // 履歴にユーザーメッセージを追加
       chatHistory.push({ role: 'user', parts: [{ text: userMessage }] });
 
-      appLog('Gemini API呼び出し（履歴:' + chatHistory.length + '件）');
+      // 履歴が長くなりすぎないよう最初の1件（書籍データ付き）＋直近9件に制限
+      const contents = chatHistory.length > 10
+        ? [chatHistory[0], ...chatHistory.slice(-9)]
+        : chatHistory;
+
+      appLog('Gemini API呼び出し（履歴:' + contents.length + '件）');
 
       // リトライ付きAPIコール（503対策）
       let res, lastErr;
@@ -1169,7 +1174,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ contents: chatHistory })
+              body: JSON.stringify({ contents })
             }
           );
           if (res.status !== 503) break;
