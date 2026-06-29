@@ -1081,7 +1081,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
   function saveGeminiKey() {
     const val = document.getElementById('geminiKeyInput').value.trim();
     if (!val) { alert('APIキーを入力してください'); return; }
-    if (!val.startsWith('AIza')) { alert('無効なAPIキーです（AIzaで始まる必要があります）'); return; }
+    if (val.length < 20) { alert('APIキーが短すぎます。正しいキーを入力してください'); return; }
     geminiKey = val;
     localStorage.setItem('geminiKey', geminiKey);
     document.getElementById('geminiSavedBadge').style.display = 'inline';
