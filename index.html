@@ -1152,7 +1152,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 
       appLog('Gemini API呼び出し開始');
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
