@@ -1,4 +1,4 @@
-const CACHE_NAME = 'book-scanner-v5';
+const CACHE_NAME = 'book-scanner-v6';
 const ASSETS = [
   '/book-scanner/',
   '/book-scanner/index.html',
@@ -31,7 +31,8 @@ self.addEventListener('fetch', e => {
   // APIリクエストはキャッシュしない
   if (e.request.url.includes('api.anthropic.com') ||
       e.request.url.includes('script.google.com') ||
-      e.request.url.includes('script.googleusercontent.com')) {
+      e.request.url.includes('script.googleusercontent.com') ||
+      e.request.url.includes('generativelanguage.googleapis.com')) {
     return;
   }
   e.respondWith(
