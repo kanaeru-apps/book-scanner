@@ -31,12 +31,24 @@ jobs:
             echo "::error::GAS_URL secret に正しいGAS URL（https://script.google.com/macros/s/.../exec）が見つかりません。不可視文字や余計な文字の混入、URL自体の誤りを確認し、貼り直してください。"
             exit 1
           fi
-          status=$(curl -sS -o /dev/null -w "%{http_code}" -L --max-time 30 "${url}?action=ping")
-          echo "HTTP status: ${status}"
+          # 一時的なタイムアウト・5xxで即失敗にしないよう、20秒間隔で最大3回試行する。
+          # curl失敗（タイムアウト等）は "000" 扱いにして、set -e でスクリプトが即死しないようにする
+          # （即死すると status が GITHUB_OUTPUT に書かれず、Chatwork通知が「原因不明（HTTP ）」になる）。
+          status="000"
+          for attempt in 1 2 3; do
+            status=$(curl -sS -o /dev/null -w "%{http_code}" -L --max-time 30 "${url}?action=ping" || echo "000")
+            echo "attempt ${attempt}: HTTP ${status}"
+            if [ "${status}" = "200" ]; then
+              break
+            fi
+            if [ "${attempt}" -lt 3 ]; then
+              sleep 20
+            fi
+          done
           # 通知ステップが原因切り分けに使えるよう、HTTPステータスを必ず出力に残す（exit前に書く）
           echo "status=${status}" >> "$GITHUB_OUTPUT"
           if [ "${status}" != "200" ]; then
-            echo "::error::Ping failed with HTTP ${status}"
+            echo "::error::Ping failed with HTTP ${status} (3回試行)"
             exit 1
           fi
           echo "Keep-alive ping successful"
