@@ -1,0 +1,3 @@
+# clasp のローカル設定。GASのスクリプトIDを含むため公開リポジトリには入れない
+.clasp.json
+.claspignore
