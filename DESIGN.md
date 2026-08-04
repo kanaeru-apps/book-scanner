@@ -16,7 +16,10 @@
 | AI解析 | Claude Vision API（claude-sonnet-4-6） |
 | データ保存 | Google Apps Script（GAS）Webアプリ -> Googleスプレッドシート |
 | 画像保存 | Google Drive（GAS経由） |
-| ホスティング | GitHub Pages（`/book-scanner/` パス） |
+| ホスティング | GitHub Pages（`kanaeru-apps/book-scanner` / `/book-scanner/` パス） |
+
+**アプリURL：** https://kanaeru-apps.github.io/book-scanner/
+（2026-08-04 に `ChihiroHonma/book-scanner` から移設。旧URL `chihirohonma.github.io/book-scanner/` は移行完了後に停止する）
 
 ---
 
@@ -189,6 +192,9 @@ URLを変えずに更新する場合は「デプロイを管理」→既存デ�
 | 中 | 匿名公開モデルの構造的脆さ | スマホからログイン不要で使うには「全員に公開」が必須で、Googleが時々その匿名アクセスをロックする。完全な根絶は本格再構築（サーバーレス＋サービスアカウント・有料）が必要。当面は「めったに壊れない＋即検知＋数十秒で復旧」の運用でカバー（[なおし方メモ.md](なおし方メモ.md)） |
 | 中 | **6/29のOAuth同意画面本番公開後も承認切れが再発** → 7/4に再認可実施済み・経過観察中 | 原因は「本番公開しても既発行の旧トークン（テスト中発行・7日期限付き）は延命されない」仕様が最有力。7/4にアクセス権削除→testAuth再認可を実施し、7/5時点でWeb App（ping/getBooks）正常を確認済み。**判定日2026-07-12：それまで失敗通知が来なければ恒久解決確定**。再発したらGCP紐付けと公開ステータスの一致を再確認。詳細は [feedback/oauth_expiry_after_production_2026_07_04.md](feedback/oauth_expiry_after_production_2026_07_04.md) |
 
+| ~~高~~ | ~~リポジトリ移設でGitHub Pagesが消滅しアプリ全停止（2026-08-03発生）~~ | 2026-08-04 復旧済：旧リポジトリを非公開化した時点でPagesが消え、アプリURLが404に。**GASは正常なのでkeep-alive pingは成功し続け、フロント側の死活を誰も見ていなかった**ため検知が遅れた。詳細は [feedback/pages_lost_on_repo_migration_2026_08_04.md](feedback/pages_lost_on_repo_migration_2026_08_04.md) |
+| 中 | フロント（GitHub Pages）の死活監視が無い | keep-aliveはGAS（サーバー側）しか見ていない。アプリURL自体の200監視を keepalive.yml に足すと今回の事象を自動検知できる（未実装） |
+
 → 詳細は [feedback/network_error_recurring.md](feedback/network_error_recurring.md) を参照
 → 止まったときの非技術者向け手順は [なおし方メモ.md](なおし方メモ.md) を参照
 
@@ -204,4 +210,5 @@ URLを変えずに更新する場合は「デプロイを管理」→既存デ�
 | 2026-06-10 | OAuth承認失効（6/4発生）から復旧。再発対策：①keep-alive失敗→Chatwork即通知（復旧通知つき） ②起動時GAS疎通チェック ③通知に復旧手順を埋め込み。経緯は [feedback/oauth_revocation_2026_06.md](feedback/oauth_revocation_2026_06.md) |
 | 2026-06-18 | Webアプリのデプロイ失効による403（6/17発生）から復旧。OAuth失効と症状が同じ403でも原因が違うことが判明。再発対策（実用ハードニング）：①起動時警告とChatwork通知を「まず再デプロイ→ダメならtestAuth」順＋HTTPステータス表示に改修 ②非技術者向け [なおし方メモ.md](なおし方メモ.md) を新設。経緯は [feedback/web_403_oauth_intact_2026_06_17.md](feedback/web_403_oauth_intact_2026_06_17.md) |
 | 2026-07-04 | 6/29のOAuth同意画面本番公開後にも承認切れが再発している問題を調査。「本番公開しても既発行トークンの7日期限は消えない」仕様が主要因の可能性。原因候補4つと確認・再認可手順（GCP紐付け確認→公開ステータス確認→アクセス権削除→testAuth再認可）を整理してユーザーに案内、同日ユーザーが全手順を実施。経緯は [feedback/oauth_expiry_after_production_2026_07_04.md](feedback/oauth_expiry_after_production_2026_07_04.md) |
+| 2026-08-04 | **`kanaeru-apps/book-scanner` へ移設**（匿名化対策の一環）。全43コミットのauthor/committerを `git filter-repo --mailmap` で `kanaeru-apps` に統一し、新規リポジトリへ通常push。GitHub Pages を有効化しアプリURLを https://kanaeru-apps.github.io/book-scanner/ に変更。8/3のリポジトリ作り直しでPagesが消えアプリが停止していた障害からの復旧も兼ねる。経緯は [feedback/pages_lost_on_repo_migration_2026_08_04.md](feedback/pages_lost_on_repo_migration_2026_08_04.md) |
 | 2026-07-05 | 朝の失敗通知（keepAlive Authorization is required）を調査。エラー発生は7/4 3:13＝**再認可前の残骸**をGoogleの日次サマリーが約24時間遅れで報告したものと確定（Gmail本文・Web App直接検証で裏取り）。現在の認可は正常（ping/getBooks成功）。判定日7/12まで経過観察。keepAliveは失効検知のカナリアとして有効と再評価 |
