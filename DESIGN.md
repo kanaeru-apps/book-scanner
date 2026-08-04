@@ -19,6 +19,8 @@
 | ホスティング | GitHub Pages（`kanaeru-apps/book-scanner` / `/book-scanner/` パス） |
 
 **アプリURL：** https://kanaeru-apps.github.io/book-scanner/
+
+**keep-alive の稼働場所（2026-08-04時点）：** 新リポジトリの `keepalive.yml` は **無効化中**（`GAS_URL` / `CHATWORK_API_TOKEN` / `CHATWORK_ROOM_ID` の3つのsecretが未設定のため、有効なままだと毎時失敗する）。実際のping稼働は旧 `ChihiroHonma/book-scanner-archive` 側が継続している。新リポジトリのSettings→Secretsに3件を登録してから `gh workflow enable keepalive.yml -R kanaeru-apps/book-scanner` で切り替えること。
 （2026-08-04 に `ChihiroHonma/book-scanner` から移設。旧URL `chihirohonma.github.io/book-scanner/` は移行完了後に停止する）
 
 ---
