@@ -35,16 +35,12 @@ function doOptions(e) {
 }
 
 // ── keep-alive：スクリプトを「休眠」させないため定期実行する関数 ─
-// 長期非アクセスでGAS Webアプリが403を返す事象の根本対策。
-// setupKeepAliveTrigger() で毎日自動実行されるトリガーを設定する。
+// SpreadsheetApp/DriveApp は時間トリガー実行時に Authorization エラーになるため
+// 認証不要な PropertiesService でタイムスタンプを更新するだけにする。
 function keepAlive() {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const folder = DriveApp.getRootFolder();
-    Logger.log("keepAlive OK: " + ss.getName() + " / " + folder.getName() + " @ " + new Date().toISOString());
-  } catch (err) {
-    Logger.log("keepAlive error: " + err.message);
-  }
+  const ts = new Date().toISOString();
+  PropertiesService.getScriptProperties().setProperty('_keepAlive', ts);
+  Logger.log("keepAlive OK @ " + ts);
 }
 
 // ── keep-alive トリガーのセットアップ（1回だけ実行すればOK）─
