@@ -15,6 +15,12 @@
 /* 配色テーマ：モノトーン＋ミニマルゴールド（2026-06-10 作り直し） */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 18px; }
+/* iOSは font-size が16px未満の入力欄にフォーカスすると自動でズームし、画面が左右に揺れて
+   入力しづらくなる。全入力欄を16px以上に固定してズーム自体を起こさせない
+   （viewportにmaximum-scaleを付ける方法はピンチズームまで殺すため採用しない） */
+input, textarea, select { font-size: 16px; }
+/* 何かの拍子に要素がはみ出しても横スクロールが起きないようにする保険 */
+html, body { overflow-x: hidden; max-width: 100%; }
 body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient(ellipse at 20% 10%, rgba(255,255,255,0.03) 0%, transparent 60%), radial-gradient(ellipse at 80% 90%, rgba(255,255,255,0.02) 0%, transparent 60%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic UI', Meiryo, sans-serif; color: #ece7dc; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
 .container { width: 100%; max-width: 520px; }
 .header { text-align: center; margin-bottom: 2rem; }
@@ -33,7 +39,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 .config-label { font-size: 0.7rem; letter-spacing: 0.2em; color: #968c7a; text-transform: uppercase; margin-bottom: 0.8rem; display: flex; justify-content: space-between; }
 .config-label span.badge { color: #eccb6e; }
 .config-row { display: flex; gap: 0.5rem; }
-.config-box input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #383428; border-radius: 3px; padding: 0.6rem 0.8rem; color: #ece7dc; font-size: 0.78rem; font-family: inherit; }
+.config-box input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #383428; border-radius: 3px; padding: 0.6rem 0.8rem; color: #ece7dc; font-size: 16px; font-family: inherit; }
 .config-box input:focus { outline: none; border-color: rgba(224,179,76,0.55); }
 .config-box p { font-size: 0.72rem; color: #7d7567; margin-top: 0.5rem; }
 .upload-area { border: 2px dashed #55502f; border-radius: 8px; padding: 2rem 1.5rem; text-align: center; background: rgba(255,255,255,0.02); transition: all 0.3s; margin-bottom: 1.2rem; position: relative; }
@@ -64,7 +70,8 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 @keyframes stamp { 0% { transform:scale(1.4) rotate(-8deg); opacity:0; } 100% { transform:scale(1) rotate(-8deg); opacity:1; } }
 @keyframes shimmer { 0%,100% { opacity:0.6; } 50% { opacity:1; } }
 .shimmer { animation: shimmer 1.5s ease infinite; }
-.stamp { position: absolute; top: 16px; right: 16px; border: 3px solid #6ec87f; color: #6ec87f; padding: 4px 10px; border-radius: 2px; font-size: 0.7rem; letter-spacing: 0.15em; font-weight: bold; transform: rotate(-8deg); animation: stamp 0.4s cubic-bezier(0.22,0.61,0.36,1) forwards; }
+/* 登録完了の表示は操作の起点になる下部ボタンのすぐ上に置く（カード右上だと入力中は視界に入らない） */
+.stamp { width: fit-content; margin: 1.5rem auto 0; border: 3px solid #6ec87f; color: #6ec87f; padding: 4px 10px; border-radius: 2px; font-size: 0.7rem; letter-spacing: 0.15em; font-weight: bold; transform: rotate(-8deg); animation: stamp 0.4s cubic-bezier(0.22,0.61,0.36,1) forwards; }
 .card-title-label { font-size: 0.65rem; letter-spacing: 0.3em; color: #968c7a; text-transform: uppercase; margin-bottom: 1rem; }
 .field { margin-bottom: 1rem; }
 .field-label { font-size: 0.65rem; letter-spacing: 0.2em; color: #968c7a; text-transform: uppercase; margin-bottom: 0.3rem; display: flex; justify-content: space-between; align-items: baseline; }
@@ -74,7 +81,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 .field input.title-input { color: #f5edd9; font-size: 1.15rem; font-weight: 600; }
 .field input:disabled, .field textarea:disabled { border-bottom-color: transparent; }
 .field input:disabled::placeholder, .field textarea:disabled::placeholder { color: transparent; }
-#f_date { color: #968c7a; font-size: 0.8rem; cursor: default; }
+#f_date { color: #968c7a; font-size: 16px; cursor: default; }
 .stars { display: flex; gap: 4px; }
 .star { font-size: 24px; cursor: pointer; transition: color 0.15s; color: #3c382b; user-select: none; }
 .star:focus { outline: 2px solid rgba(224,179,76,0.5); border-radius: 2px; }
@@ -134,7 +141,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 .chat-bubble.ai .chat-bubble-inner { background: rgba(255,255,255,0.04); border: 1px solid #2b2820; color: #ece7dc; white-space: pre-wrap; }
 .chat-bubble.thinking .chat-bubble-inner { color: #968c7a; font-style: italic; }
 .chat-input-area { display: flex; gap: 0.5rem; align-items: flex-end; }
-.chat-input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #383428; border-radius: 4px; padding: 0.65rem 0.8rem; color: #ece7dc; font-size: 0.85rem; font-family: inherit; resize: none; line-height: 1.5; }
+.chat-input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #383428; border-radius: 4px; padding: 0.65rem 0.8rem; color: #ece7dc; font-size: 16px; font-family: inherit; resize: none; line-height: 1.5; }
 .chat-input:focus { outline: none; border-color: rgba(224,179,76,0.55); }
 .chat-send-btn { background: linear-gradient(135deg, #d2a440, #ecd084); border: none; border-radius: 4px; padding: 0.65rem 1.1rem; color: #14110a; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; transition: all 0.2s; white-space: nowrap; }
 .chat-send-btn:hover { opacity: 0.85; }
@@ -254,7 +261,6 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
     <div class="error-box" id="errorBox"></div>
 
     <div class="result-card" id="resultCard" style="display:none">
-      <div class="stamp" id="stamp" style="display:none">✓ 登録済</div>
       <div class="card-title-label">— Library Card —</div>
       <div class="field">
         <div class="field-label"><span>タイトル</span></div>
@@ -290,6 +296,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
         <div class="field-label"><span>登録日</span></div>
         <input type="text" id="f_date" readonly tabindex="-1">
       </div>
+      <div class="stamp" id="stamp" style="display:none">✓ 登録済</div>
       <div class="btn-row">
         <button class="btn-reset" onclick="resetAll()">リセット</button>
         <button class="btn-save" id="saveBtn" onclick="saveToSheet()">📚 スプレッドシートに登録</button>
