@@ -39,7 +39,8 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 .config-label { font-size: 0.7rem; letter-spacing: 0.2em; color: #968c7a; text-transform: uppercase; margin-bottom: 0.8rem; display: flex; justify-content: space-between; }
 .config-label span.badge { color: #eccb6e; }
 .config-row { display: flex; gap: 0.5rem; }
-.config-box input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #383428; border-radius: 3px; padding: 0.6rem 0.8rem; color: #ece7dc; font-size: 16px; font-family: inherit; }
+/* min-width:0 が無いと flex アイテムは内容幅より縮まず、入力欄が右のボタンを枠外へ押し出す */
+.config-box input { flex: 1; min-width: 0; background: rgba(0,0,0,0.4); border: 1px solid #383428; border-radius: 3px; padding: 0.6rem 0.8rem; color: #ece7dc; font-size: 16px; font-family: inherit; }
 .config-box input:focus { outline: none; border-color: rgba(224,179,76,0.55); }
 .config-box p { font-size: 0.72rem; color: #7d7567; margin-top: 0.5rem; }
 .upload-area { border: 2px dashed #55502f; border-radius: 8px; padding: 2rem 1.5rem; text-align: center; background: rgba(255,255,255,0.02); transition: all 0.3s; margin-bottom: 1.2rem; position: relative; }
