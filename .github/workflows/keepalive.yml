@@ -34,12 +34,26 @@ jobs:
           # 一時的なタイムアウト・5xxで即失敗にしないよう、20秒間隔で最大3回試行する。
           # curl失敗（タイムアウト等）は "000" 扱いにして、set -e でスクリプトが即死しないようにする
           # （即死すると status が GITHUB_OUTPUT に書かれず、Chatwork通知が「原因不明（HTTP ）」になる）。
+          #
+          # 合否はHTTPコードではなく応答本文の "ok":true で判定する。GASは
+          #   ・OAuth失効／アクセス権が「全員」でない → ログイン画面のHTML
+          #   ・URLが古いデプロイを指している         → 旧コードの別JSON
+          # のいずれもHTTP 200で返すため、コードだけ見ると「監視は緑なのにアプリは動かない」を見逃す。
+          # アプリ側 checkGasHealth() と同じ基準に揃えることで、監視の合否＝アプリの可否になる。
           status="000"
           for attempt in 1 2 3; do
-            status=$(curl -sS -o /dev/null -w "%{http_code}" -L --max-time 30 "${url}?action=ping" || echo "000")
-            echo "attempt ${attempt}: HTTP ${status}"
-            if [ "${status}" = "200" ]; then
+            resp=$(curl -sS -L --max-time 30 -w '\n%{http_code}' "${url}?action=ping" || printf '\n000')
+            code=$(printf '%s' "${resp}" | tail -n 1)
+            payload=$(printf '%s' "${resp}" | sed '$d')
+            echo "attempt ${attempt}: HTTP ${code}"
+            if [ "${code}" != "200" ]; then
+              status="${code}"
+            elif printf '%s' "${payload}" | grep -q '"ok"[[:space:]]*:[[:space:]]*true'; then
+              status="200"
               break
+            else
+              status="BAD_RESPONSE"
+              echo "::warning::HTTP 200 だが ping の正常応答ではありません（デプロイ違い／アクセス権の可能性）"
             fi
             if [ "${attempt}" -lt 3 ]; then
               sleep 20
@@ -83,6 +97,7 @@ jobs:
           # 異なり、対処を取り違えると直らないため。
           case "${PING_STATUS}" in
             401|403)
+              label="HTTP ${PING_STATUS}"
               diag="原因の候補①：Webアプリのデプロイ失効／アクセス権（最有力）。②：OAuth承認の失効。"
               fix=$(printf '%s\n' \
                 "【まず試す：デプロイのやり直し（アクセス権が「全員」でも403になることがある）】" \
@@ -93,18 +108,31 @@ jobs:
                 "【それでも直らなければ：OAuth再承認】" \
                 "4. 関数 testAuth を選んで「実行」→「許可」をクリック") ;;
             5*|000)
+              label="接続失敗（HTTP ${PING_STATUS}）"
               diag="原因の候補：Google Apps Script 側の一時的な障害／タイムアウトの可能性。"
               fix=$(printf '%s\n' \
                 "【対処】" \
                 "1. 30分ほど待って自動pingの復旧通知が来るか確認" \
                 "2. 来なければ Apps Script の実行ログ・Googleの稼働状況を確認") ;;
+            BAD_RESPONSE)
+              label="応答が不正"
+              diag="原因：HTTPは200で届くが、pingの正常応答（\"ok\":true）が返っていません。①GAS_URLが古いデプロイを指している（最有力）。②Webアプリのアクセス権が「全員」でないためログイン画面が返っている。"
+              fix=$(printf '%s\n' \
+                "【対処：正しいデプロイのURLに貼り替える】" \
+                "1. スプレッドシート「読書記録」→ 拡張機能 → Apps Script" \
+                "2. 「デプロイを管理」→ バージョン番号が最も大きいデプロイを選ぶ" \
+                "   ※ デプロイが複数あると、古いデプロイは古いコードを配信し続けます" \
+                "3. そのexec URLを (a)アプリのGAS URL設定 (b)GitHubのGAS_URLシークレット の両方に貼り替え" \
+                "4. あわせて「アクセスできるユーザー＝全員」になっているか確認") ;;
             NO_SECRET|BAD_URL)
+              label="${PING_STATUS}"
               diag="原因：GitHubの GAS_URL シークレットが未設定／不正（不可視文字混入やURL誤り）。"
               fix=$(printf '%s\n' \
                 "【対処】" \
                 "1. GitHub → リポジトリ Settings → Secrets → GAS_URL を開く" \
                 "2. 正しいexec URL（https://script.google.com/macros/s/.../exec）を貼り直す") ;;
             *)
+              label="HTTP ${PING_STATUS}"
               diag="原因不明（HTTP ${PING_STATUS}）。アクセス権・デプロイ・OAuthの順で確認してください。"
               fix=$(printf '%s\n' \
                 "1. デプロイを管理でアクセス=全員 を確認、必要なら新バージョンで再デプロイ＋URL貼り替え" \
@@ -112,7 +140,7 @@ jobs:
           esac
           body=$(printf '%s\n' \
             "[To:326753]" \
-            "[info][title]⚠️ Book Scanner のGASが応答しません（HTTP ${PING_STATUS}）[/title]keep-alive ping が失敗しました。" \
+            "[info][title]⚠️ Book Scanner のGASが応答しません（${label}）[/title]keep-alive ping が失敗しました。" \
             "${diag}" \
             "" \
             "対象スプレッドシート：" \
