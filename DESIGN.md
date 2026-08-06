@@ -197,6 +197,7 @@ URLを変えずに更新する場合は「デプロイを管理」→既存デ�
 | ~~高~~ | ~~リポジトリ移設でGitHub Pagesが消滅しアプリ全停止（2026-08-03発生）~~ | 2026-08-04 復旧済：旧リポジトリを非公開化した時点でPagesが消え、アプリURLが404に。**GASは正常なのでkeep-alive pingは成功し続け、フロント側の死活を誰も見ていなかった**ため検知が遅れた。詳細は [feedback/pages_lost_on_repo_migration_2026_08_04.md](feedback/pages_lost_on_repo_migration_2026_08_04.md) |
 | 中 | フロント（GitHub Pages）の死活監視が無い | keep-aliveはGAS（サーバー側）しか見ていない。アプリURL自体の200監視を keepalive.yml に足すと今回の事象を自動検知できる（未実装） |
 | ~~高~~ | ~~古いデプロイのURLを設定していて機能が動かない（2026-08-06発生）~~ | 2026-08-06 対応済：デプロイが4つ存在し、正常応答するのは最新版(v30)の1つだけだった。**残り3つもHTTP 200を返す**（@HEADはGoogleログイン画面、v1/v12は旧コードの別JSON）ため、HTTPコードだけを見ていた keep-alive では検知できなかった。判定基準をアプリ側 `checkGasHealth()` と同じ「本文の `ok:true`」に統一し、不一致時は `BAD_RESPONSE` としてデプロイ選び直しの手順つきでChatwork通知するよう改修 |
+| ~~中~~ | ~~空欄のまま「保存」を押すと設定ボックスの入力欄が消える~~ | 2026-08-06 対応済：`showError()` は対象要素の `textContent` を丸ごと差し替える実装なのに、エラー表示用要素ではなく設定ボックス自体の id（`apiBox` / `configBox`）を渡していた。入力欄とボタンが消え、5秒後に文字も消えるためリロードしないと復旧できなかった。各ボックスに専用の `error-box`（`apiErrorBox` / `gasErrorBox`）を追加して解消 |
 | ~~中~~ | ~~ホーム画面に追加すると設定（APIキー2つ＋GAS URL）が消える~~ | 2026-08-06 対応済：iOSではSafariとホーム画面アプリでlocalStorageが別扱いになることがある。localStorage/IndexedDB/Cache APIはいずれも同じ分離ルールに従うため**自動引き継ぎは実現不可能**。代わりに「引き継ぎコード」（3つの設定をまとめたBase64文字列）を作り、貼り付け1回で復元できる仕組みを実装。standalone起動かつ設定が空のときは移行手順の案内バナーを自動表示する |
 
 → 詳細は [feedback/network_error_recurring.md](feedback/network_error_recurring.md) を参照

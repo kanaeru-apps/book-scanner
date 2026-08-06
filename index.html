@@ -182,6 +182,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
       <button class="btn-sm" onclick="toggleApiKeyVisibility()">👁</button>
       <button class="btn-sm" onclick="saveApiKey()">保存</button>
     </div>
+    <div class="error-box" id="apiErrorBox"></div>
     <p>このデバイスに保存されます（次回以降も保持）</p>
   </div>
 
@@ -207,6 +208,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
       <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/..." onkeydown="if(event.key==='Enter') saveUrl()">
       <button class="btn-sm" onclick="saveUrl()">保存</button>
     </div>
+    <div class="error-box" id="gasErrorBox"></div>
     <p>GAS「デプロイ」→「デプロイを管理」でURLをコピーして貼り付け</p>
   </div>
 
@@ -512,11 +514,11 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
   function saveApiKey() {
     const val = document.getElementById('apiKeyInput').value.trim();
     if (!val) {
-      showError('apiBox', 'APIキーを入力してください');
+      showError('apiErrorBox','APIキーを入力してください');
       return;
     }
     if (!val.startsWith('sk-ant-')) {
-      showError('apiBox', '無効な APIキーです（sk-ant- で始まる必要があります）');
+      showError('apiErrorBox','無効な APIキーです（sk-ant- で始まる必要があります）');
       return;
     }
     apiKey = val;
@@ -534,12 +536,12 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
   function saveUrl() {
     const val = document.getElementById('gasUrlInput').value.trim();
     if (!val) {
-      showError('configBox', 'URLを入力してください');
+      showError('gasErrorBox','URLを入力してください');
       return;
     }
     // GAS URLのバリデーション（修正：セキュリティ対策）
     if (!val.startsWith('https://script.google.com/macros/s/')) {
-      showError('configBox', '無効なGAS URLです（https://script.google.com/macros/s/... で始まる必要があります）');
+      showError('gasErrorBox','無効なGAS URLです（https://script.google.com/macros/s/... で始まる必要があります）');
       return;
     }
     gasUrl = val;
