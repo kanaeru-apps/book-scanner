@@ -43,6 +43,11 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 .config-box input { flex: 1; min-width: 0; background: rgba(0,0,0,0.4); border: 1px solid #383428; border-radius: 3px; padding: 0.6rem 0.8rem; color: #ece7dc; font-size: 16px; font-family: inherit; }
 .config-box input:focus { outline: none; border-color: rgba(224,179,76,0.55); }
 .config-box p { font-size: 0.72rem; color: #7d7567; margin-top: 0.5rem; }
+/* 引き継ぎコードの入出力欄。box-sizing を指定しないと padding の分だけ枠外へはみ出す */
+.backup-area { width: 100%; box-sizing: border-box; margin-top: 0.6rem; background: rgba(0,0,0,0.4); border: 1px solid #383428; border-radius: 3px; padding: 0.6rem 0.8rem; color: #ece7dc; font-size: 16px; font-family: inherit; line-height: 1.5; resize: vertical; min-height: 4.5rem; word-break: break-all; }
+.backup-area:focus { outline: none; border-color: rgba(224,179,76,0.55); }
+.migrate-note { background: rgba(224,179,76,0.08); border: 1px solid rgba(224,179,76,0.45); border-radius: 4px; padding: 0.9rem 1rem; margin-bottom: 1.5rem; font-size: 0.78rem; line-height: 1.8; color: #d8d0c0; }
+.migrate-note strong { color: #e0b34c; }
 .upload-area { border: 2px dashed #55502f; border-radius: 8px; padding: 2rem 1.5rem; text-align: center; background: rgba(255,255,255,0.02); transition: all 0.3s; margin-bottom: 1.2rem; position: relative; }
 .upload-area.dragging { border-color: #e0b34c; background: rgba(224,179,76,0.05); }
 .upload-area.has-image { padding: 1rem; }
@@ -158,6 +163,15 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
     <p>表紙を読み取り、蔵書リストへ自動登録</p>
   </div>
 
+  <!-- ホーム画面アプリとして起動したのに設定が空＝Safariから引き継がれなかった可能性が高いので、
+       手動移行のやり方をその場で案内する（自動引き継ぎはブラウザ側の制約でできない） -->
+  <div class="migrate-note" id="migrateNote" style="display:none">
+    <strong>設定が空の状態で起動しました</strong><br>
+    ホーム画面に追加したアプリは、Safari で保存した設定を引き継げないことがあります。<br>
+    Safari で同じページを開き、下の「📤 コードを作成」を押してコードをコピーしてから、
+    こちらの「📥 コードで復元」に貼り付けると、3つの設定が一度に戻ります。
+  </div>
+
   <div class="config-box" id="apiBox">
     <div class="config-label">
       <span>🔑 Anthropic APIキー</span>
@@ -194,6 +208,24 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
       <button class="btn-sm" onclick="saveUrl()">保存</button>
     </div>
     <p>GAS「デプロイ」→「デプロイを管理」でURLをコピーして貼り付け</p>
+  </div>
+
+  <div class="config-box" id="backupBox">
+    <div class="config-label">
+      <span>💾 設定の引き継ぎ</span>
+    </div>
+    <div class="config-row">
+      <button class="btn-sm" id="backupBtn" onclick="showBackupCode()" style="flex:1; min-width:0; padding:0.5rem 1rem;">📤 コードを作成</button>
+      <button class="btn-sm" id="restoreToggleBtn" onclick="toggleRestorePanel()" style="flex:1; min-width:0; padding:0.5rem 1rem;">📥 コードで復元</button>
+    </div>
+    <textarea class="backup-area" id="backupOut" readonly style="display:none" onclick="this.select()"></textarea>
+    <div id="restorePanel" style="display:none">
+      <textarea class="backup-area" id="restoreIn" placeholder="引き継ぎコードを貼り付け（BOOKSCAN1- で始まる文字列）"></textarea>
+      <button class="btn-sm" onclick="applyBackupCode()" style="width:100%; padding:0.5rem 1rem; margin-top:0.5rem;">この内容で復元する</button>
+    </div>
+    <div class="error-box" id="backupErrorBox"></div>
+    <p>3つの設定をまとめた文字列を作ります。ホーム画面に追加する前に作っておくと、貼り付け1回で復元できます。<br>
+    <strong style="color:#c9a24a">※ コードにはAPIキーが含まれます。他人に渡さないでください。</strong></p>
   </div>
 
   <div class="config-box">
@@ -418,6 +450,15 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
       document.getElementById('configBox').classList.add('saved');
       checkGasHealth();
     }
+    // ホーム画面アプリとして起動したのに設定が3つとも空＝Safariから引き継がれて
+    // いない可能性が高い。手入力し直す前に移行手段があることを気づけるようにする。
+    const isStandalone = window.navigator.standalone === true ||
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    if (isStandalone && !apiKey && !geminiKey && !gasUrl) {
+      document.getElementById('migrateNote').style.display = 'block';
+      appLog('ホーム画面アプリを設定なしで起動しました（引き継ぎ案内を表示）', 'warn');
+    }
+
     document.getElementById('stars').addEventListener('keydown', onStarKeydown);
 
     // iOS でドラッグ&ドロップが非対応のため、テキストを調整（修正：UX向上）
@@ -1085,6 +1126,140 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
     el.focus(); el.select();
     try { document.execCommand('copy'); } catch(_) {}
     document.body.removeChild(el);
+  }
+
+  // ── 設定の引き継ぎ（バックアップ／復元）────────────────
+  // iOSでは Safari で開いたページと「ホーム画面に追加」したアプリで localStorage が
+  // 別扱いになることがあり、ホーム画面に追加した途端に3つの設定が空になる。
+  // localStorage / IndexedDB / Cache API はどれも同じ分離ルールに従うため、
+  // 自動での引き継ぎはブラウザ側の制約で実現できない。そこで「1回の貼り付けで
+  // 3つとも移せる」手段を用意して、手入力し直す手間だけでも無くす。
+  // 値は端末内（クリップボード）で完結し、ネットワークには一切送らない。
+  const BACKUP_PREFIX = 'BOOKSCAN1-';
+
+  // btoa は Latin-1 しか扱えないため、UTF-8 バイト列を経由して変換する
+  function b64FromText(text) {
+    const bytes = new TextEncoder().encode(text);
+    let bin = '';
+    bytes.forEach(b => { bin += String.fromCharCode(b); });
+    return btoa(bin);
+  }
+  function textFromB64(b64) {
+    const bin = atob(b64);
+    return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+  }
+
+  function buildBackupCode() {
+    return BACKUP_PREFIX + b64FromText(JSON.stringify({
+      v: 1, apiKey: apiKey, geminiKey: geminiKey, gasUrl: gasUrl
+    }));
+  }
+
+  function showBackupCode() {
+    if (!apiKey && !geminiKey && !gasUrl) {
+      showError('backupErrorBox', '保存されている設定がありません');
+      return;
+    }
+    const code = buildBackupCode();
+    const out = document.getElementById('backupOut');
+    out.value = code;
+    out.style.display = 'block';
+    const btn = document.getElementById('backupBtn');
+    const done = () => {
+      btn.textContent = '✅ コピーしました';
+      setTimeout(() => { btn.textContent = '📤 コードを作成'; }, 2500);
+    };
+    // iOS Safari は navigator.clipboard が使えないことがあるのでフォールバック付き
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(done).catch(() => { execCopy(code); done(); });
+    } else {
+      execCopy(code); done();
+    }
+    // コード本体はAPIキーを含むのでログには残さない
+    appLog('引き継ぎコードを作成しました');
+  }
+
+  function toggleRestorePanel() {
+    const panel = document.getElementById('restorePanel');
+    const opened = panel.style.display !== 'block';
+    panel.style.display = opened ? 'block' : 'none';
+    if (opened) document.getElementById('restoreIn').focus();
+  }
+
+  function applyBackupCode() {
+    const raw = document.getElementById('restoreIn').value;
+    if (!raw.trim()) {
+      showError('backupErrorBox', 'コードを貼り付けてください');
+      return;
+    }
+    // メモアプリやメッセージ経由で折り返されても通るよう、空白・改行は落とす
+    const cleaned = raw.replace(/\s+/g, '');
+    if (cleaned.indexOf(BACKUP_PREFIX) !== 0) {
+      showError('backupErrorBox', '引き継ぎコードではありません（BOOKSCAN1- で始まる文字列です）');
+      return;
+    }
+    let data;
+    try {
+      data = JSON.parse(textFromB64(cleaned.slice(BACKUP_PREFIX.length)));
+    } catch (_) {
+      // 例外オブジェクトには復号途中のコード（＝APIキー）が含まれ得るので中身は一切出さない
+      showError('backupErrorBox', 'コードが壊れています。コピーし直してください');
+      return;
+    }
+    if (!data || typeof data !== 'object') {
+      showError('backupErrorBox', 'コードが壊れています。コピーし直してください');
+      return;
+    }
+
+    // 各項目は保存時と同じ条件で検証する。壊れた値を書き込むと、
+    // 「復元できたのに動かない」という分かりにくい状態になるため。
+    const applied = [], skipped = [];
+    const val = k => (typeof data[k] === 'string' ? data[k].trim() : '');
+
+    const a = val('apiKey');
+    if (a && a.startsWith('sk-ant-')) {
+      apiKey = a;
+      localStorage.setItem('apiKey', apiKey);
+      document.getElementById('apiKeyInput').value = apiKey;
+      document.getElementById('apiSavedBadge').style.display = 'inline';
+      document.getElementById('apiBox').classList.add('saved');
+      applied.push('Anthropic');
+    } else if (a) { skipped.push('Anthropic'); }
+
+    const g = val('geminiKey');
+    if (g && g.length >= 20) {
+      geminiKey = g;
+      localStorage.setItem('geminiKey', geminiKey);
+      document.getElementById('geminiKeyInput').value = geminiKey;
+      document.getElementById('geminiSavedBadge').style.display = 'inline';
+      document.getElementById('geminiBox').classList.add('saved');
+      applied.push('Gemini');
+    } else if (g) { skipped.push('Gemini'); }
+
+    const u = val('gasUrl');
+    if (u && u.startsWith('https://script.google.com/macros/s/')) {
+      gasUrl = u;
+      localStorage.setItem('gasUrl', gasUrl);
+      document.getElementById('gasUrlInput').value = gasUrl;
+      document.getElementById('savedBadge').style.display = 'inline';
+      document.getElementById('configBox').classList.add('saved');
+      applied.push('GAS URL');
+    } else if (u) { skipped.push('GAS URL'); }
+
+    if (applied.length === 0) {
+      showError('backupErrorBox', '復元できる設定が入っていませんでした');
+      return;
+    }
+
+    // 復元後は画面上にAPIキーを残さない（肩越しに見られるのを防ぐ）
+    document.getElementById('restoreIn').value = '';
+    document.getElementById('restorePanel').style.display = 'none';
+    document.getElementById('migrateNote').style.display = 'none';
+    showSuccess('backupErrorBox',
+      applied.join(' / ') + ' を復元しました' +
+      (skipped.length ? `（${skipped.join(' / ')} は形式が不正のため取り込みませんでした）` : ''));
+    appLog(`設定を復元しました: ${applied.join(', ')}`);
+    if (gasUrl) checkGasHealth();
   }
 
   // ── Gemini APIキー設定 ────────────────────────────────

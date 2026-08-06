@@ -196,6 +196,8 @@ URLを変えずに更新する場合は「デプロイを管理」→既存デ�
 
 | ~~高~~ | ~~リポジトリ移設でGitHub Pagesが消滅しアプリ全停止（2026-08-03発生）~~ | 2026-08-04 復旧済：旧リポジトリを非公開化した時点でPagesが消え、アプリURLが404に。**GASは正常なのでkeep-alive pingは成功し続け、フロント側の死活を誰も見ていなかった**ため検知が遅れた。詳細は [feedback/pages_lost_on_repo_migration_2026_08_04.md](feedback/pages_lost_on_repo_migration_2026_08_04.md) |
 | 中 | フロント（GitHub Pages）の死活監視が無い | keep-aliveはGAS（サーバー側）しか見ていない。アプリURL自体の200監視を keepalive.yml に足すと今回の事象を自動検知できる（未実装） |
+| ~~高~~ | ~~古いデプロイのURLを設定していて機能が動かない（2026-08-06発生）~~ | 2026-08-06 対応済：デプロイが4つ存在し、正常応答するのは最新版(v30)の1つだけだった。**残り3つもHTTP 200を返す**（@HEADはGoogleログイン画面、v1/v12は旧コードの別JSON）ため、HTTPコードだけを見ていた keep-alive では検知できなかった。判定基準をアプリ側 `checkGasHealth()` と同じ「本文の `ok:true`」に統一し、不一致時は `BAD_RESPONSE` としてデプロイ選び直しの手順つきでChatwork通知するよう改修 |
+| ~~中~~ | ~~ホーム画面に追加すると設定（APIキー2つ＋GAS URL）が消える~~ | 2026-08-06 対応済：iOSではSafariとホーム画面アプリでlocalStorageが別扱いになることがある。localStorage/IndexedDB/Cache APIはいずれも同じ分離ルールに従うため**自動引き継ぎは実現不可能**。代わりに「引き継ぎコード」（3つの設定をまとめたBase64文字列）を作り、貼り付け1回で復元できる仕組みを実装。standalone起動かつ設定が空のときは移行手順の案内バナーを自動表示する |
 
 → 詳細は [feedback/network_error_recurring.md](feedback/network_error_recurring.md) を参照
 → 止まったときの非技術者向け手順は [なおし方メモ.md](なおし方メモ.md) を参照
@@ -213,4 +215,5 @@ URLを変えずに更新する場合は「デプロイを管理」→既存デ�
 | 2026-06-18 | Webアプリのデプロイ失効による403（6/17発生）から復旧。OAuth失効と症状が同じ403でも原因が違うことが判明。再発対策（実用ハードニング）：①起動時警告とChatwork通知を「まず再デプロイ→ダメならtestAuth」順＋HTTPステータス表示に改修 ②非技術者向け [なおし方メモ.md](なおし方メモ.md) を新設。経緯は [feedback/web_403_oauth_intact_2026_06_17.md](feedback/web_403_oauth_intact_2026_06_17.md) |
 | 2026-07-04 | 6/29のOAuth同意画面本番公開後にも承認切れが再発している問題を調査。「本番公開しても既発行トークンの7日期限は消えない」仕様が主要因の可能性。原因候補4つと確認・再認可手順（GCP紐付け確認→公開ステータス確認→アクセス権削除→testAuth再認可）を整理してユーザーに案内、同日ユーザーが全手順を実施。経緯は [feedback/oauth_expiry_after_production_2026_07_04.md](feedback/oauth_expiry_after_production_2026_07_04.md) |
 | 2026-08-04 | **`kanaeru-apps/book-scanner` へ移設**（匿名化対策の一環）。全43コミットのauthor/committerを `git filter-repo --mailmap` で `kanaeru-apps` に統一し、新規リポジトリへ通常push。GitHub Pages を有効化しアプリURLを https://kanaeru-apps.github.io/book-scanner/ に変更。8/3のリポジトリ作り直しでPagesが消えアプリが停止していた障害からの復旧も兼ねる。経緯は [feedback/pages_lost_on_repo_migration_2026_08_04.md](feedback/pages_lost_on_repo_migration_2026_08_04.md) |
+| 2026-08-06 | ①**keep-aliveの合否判定を「HTTP 200」から「本文の `ok:true`」へ変更**。デプロイが4つ存在し3つが誤った応答をHTTP 200で返していたため、監視が緑のままアプリが動かない状態を見逃していた。新ステータス `BAD_RESPONSE` を追加し、デプロイ選び直しの手順つきで通知する。②`kanaeru-apps` 側で keep-alive を有効化（secret 3件を再設定）。③**設定の引き継ぎ機能を実装**。ホーム画面追加でAPIキーが消える問題に対し、3つの設定をまとめた「引き継ぎコード」の作成・復元と、standalone起動時の案内バナーを追加 |
 | 2026-07-05 | 朝の失敗通知（keepAlive Authorization is required）を調査。エラー発生は7/4 3:13＝**再認可前の残骸**をGoogleの日次サマリーが約24時間遅れで報告したものと確定（Gmail本文・Web App直接検証で裏取り）。現在の認可は正常（ping/getBooks成功）。判定日7/12まで経過観察。keepAliveは失効検知のカナリアとして有効と再評価 |
