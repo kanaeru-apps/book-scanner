@@ -15,10 +15,14 @@
 | PWA | Service Worker + manifest.json |
 | AI解析 | Claude Vision API（claude-sonnet-4-6） |
 | データ保存 | Google Apps Script（GAS）Webアプリ -> Googleスプレッドシート |
-| 画像保存 | Google Drive（GAS経由） |
+| 画像・PDF保存 | Google Drive（GAS経由、本ごとのフォルダ） |
 | ホスティング | GitHub Pages（`kanaeru-apps/book-scanner` / `/book-scanner/` パス） |
 
 **アプリURL：** https://kanaeru-apps.github.io/book-scanner/
+
+**添付ファイル：** 新規登録後、または「画像・PDFを追加」から登録済みの本を選び、画像とPDFを保存できる。PDFは日本語のファイル名と原本のバイト列を保持し、画像は従来どおりJPEGに縮小する。上限は1ファイル20MB・選択合計50MB・20ファイル。保存後にDriveへのリンクを表示し、失敗したファイルだけ再送できる。保存先フォルダの共有設定は変更しない。PDFの内容をAI解析する機能ではない。
+
+既存GASの `uploadImage` はMIMEタイプとファイル名を受け取りBlobを作るため、PDF対応にGASの再デプロイは不要。回帰確認は `node tests/attachments.test.cjs`。Drive呼び出しをモックし、実際のGAS保存関数に渡るPDFのバイト列・MIME・名前と画像の互換性を検証する。
 
 **keep-alive の稼働場所（2026-08-04時点）：** 新リポジトリの `keepalive.yml` は **無効化中**（`GAS_URL` / `CHATWORK_API_TOKEN` / `CHATWORK_ROOM_ID` の3つのsecretが未設定のため、有効なままだと毎時失敗する）。実際のping稼働は旧 `ChihiroHonma/book-scanner-archive` 側が継続している。新リポジトリのSettings→Secretsに3件を登録してから `gh workflow enable keepalive.yml -R kanaeru-apps/book-scanner` で切り替えること。
 （2026-08-04 に `ChihiroHonma/book-scanner` から移設。旧URL `chihirohonma.github.io/book-scanner/` は移行完了後に停止する）
