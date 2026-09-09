@@ -112,6 +112,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 .page-images-area.dragging { border-color: #d8d3c8; background: rgba(255,255,255,0.04); }
 .page-thumbs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
 .page-thumb { position: relative; width: 80px; height: 80px; }
+.page-thumb.pdf-thumb { width: 140px; height: auto; min-height: 80px; padding: 12px 8px; border: 1px solid #665638; border-radius: 3px; box-sizing: border-box; overflow-wrap: anywhere; font-size: .75rem; color: #eccb6e; white-space: pre-wrap; }
 .page-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 3px; border: 1px solid #383428; }
 .page-thumb-remove { position: absolute; top: -6px; right: -6px; background: #2a2620; border: 1px solid rgba(224,179,76,0.45); color: #eccb6e; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; }
 .btn-do-upload { width: 100%; padding: 0.7rem; background: linear-gradient(135deg, #b8b2a2, #e6e1d3); border: none; border-radius: 3px; color: #14110a; font-weight: bold; font-size: 0.9rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
@@ -244,7 +245,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="ai" onclick="switchTab('ai')">💻 AIに相談</button>
     <button class="tab-btn" data-tab="register" onclick="switchTab('register')">📖 新規登録</button>
-    <button class="tab-btn" data-tab="addimage" onclick="switchTab('addimage')">🖼 画像を追加</button>
+    <button class="tab-btn" data-tab="addimage" onclick="switchTab('addimage')">🖼 画像・PDFを追加</button>
   </div>
 
   <!-- ── AIに相談タブ ── -->
@@ -337,10 +338,10 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
         <button class="btn-save" id="saveBtn" onclick="saveToSheet()">📚 スプレッドシートに登録</button>
         <button class="btn-next" id="nextBtn" style="display:none" onclick="resetAll()">＋ 次の本を登録</button>
       </div>
-      <button class="btn-upload-pages" id="btnUploadPages" style="display:none" onclick="showInlineUpload()">🖼 ページ画像をドライブに追加</button>
+      <button class="btn-upload-pages" id="btnUploadPages" style="display:none" onclick="showInlineUpload()">🖼 画像・PDFをドライブに追加</button>
       <div id="inlineUploadPanel" style="display:none">
         <div class="upload-panel">
-          <div class="upload-panel-title">— Page Images —</div>
+          <div class="upload-panel-title">— 画像・PDF —</div>
           <div class="upload-panel-book" id="inlineBookTitle"></div>
           <div id="inlinePageThumbs" class="page-thumbs"></div>
           <div class="page-images-area" id="inlineDropArea"
@@ -348,9 +349,9 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
                ondragover="onPageDragOver(event,'inlineDropArea')"
                ondragleave="onPageDragLeave('inlineDropArea')"
                ondrop="onPageDrop(event,'inlineDropArea','inline')">
-            <div style="color:#b3a892; font-size:0.85rem;">クリックまたはドロップで画像を追加（複数可）</div>
+            <div style="color:#b3a892; font-size:0.85rem;">画像・PDFを選択またはドロップ（複数可）<br>1ファイル20MB以下・合計50MBまで。選んだ本のGoogle Driveフォルダに保存します。</div>
           </div>
-          <input type="file" id="inlinePageInput" accept="image/*" multiple style="display:none" onchange="onPageFileChange(event,'inline','inlinePageThumbs')">
+          <input type="file" id="inlinePageInput" accept="image/*,application/pdf,.pdf" multiple style="display:none" onchange="onPageFileChange(event,'inline','inlinePageThumbs')">
           <div class="progress-bar" id="inlineProgress"><div class="progress-fill" id="inlineProgressFill" style="width:0%"></div></div>
           <div class="error-box" id="inlineErrorBox"></div>
           <div class="success-box" id="inlineSuccessBox"></div>
@@ -368,7 +369,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
       <div class="book-list" id="bookList"></div>
       <div id="addImagePanel" style="display:none">
         <div class="upload-panel">
-          <div class="upload-panel-title">— Page Images —</div>
+          <div class="upload-panel-title">— 画像・PDF —</div>
           <div class="upload-panel-book" id="addImageBookTitle"></div>
           <div id="addImageThumbs" class="page-thumbs"></div>
           <div class="page-images-area" id="addDropArea"
@@ -376,9 +377,9 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
                ondragover="onPageDragOver(event,'addDropArea')"
                ondragleave="onPageDragLeave('addDropArea')"
                ondrop="onPageDrop(event,'addDropArea','add')">
-            <div style="color:#b3a892; font-size:0.85rem;">クリックまたはドロップで画像を追加（複数可）</div>
+            <div style="color:#b3a892; font-size:0.85rem;">画像・PDFを選択またはドロップ（複数可）<br>1ファイル20MB以下・合計50MBまで。選んだ本のGoogle Driveフォルダに保存します。</div>
           </div>
-          <input type="file" id="addPageInput" accept="image/*" multiple style="display:none" onchange="onPageFileChange(event,'add','addImageThumbs')">
+          <input type="file" id="addPageInput" accept="image/*,application/pdf,.pdf" multiple style="display:none" onchange="onPageFileChange(event,'add','addImageThumbs')">
           <div class="progress-bar" id="addProgress"><div class="progress-fill" id="addProgressFill" style="width:0%"></div></div>
           <div class="error-box" id="addErrorBox"></div>
           <div class="success-box" id="addSuccessBox"></div>
@@ -665,71 +666,78 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
     e.target.value = '';  // 同じファイルを再選択できるようにリセット
   }
   const MAX_PAGE_IMAGES = 20;
-  function addPageFiles(files, mode, thumbsId) {
-    // thumbsIdが未指定の場合はmodeから導出
-    const tId = thumbsId || (mode === 'inline' ? 'inlinePageThumbs' : 'addImageThumbs');
-    const errorBoxId = mode === 'inline' ? 'inlineErrorBox' : 'addErrorBox';
-    const imgFiles = files.filter(f => f.type.startsWith('image/'));
-    const remaining = MAX_PAGE_IMAGES - pageImages[mode].length;
-    if (remaining <= 0) {
-      showError(errorBoxId, `画像は最大${MAX_PAGE_IMAGES}枚までです`);
-      return;
-    }
-    let toAdd = imgFiles.slice(0, remaining);
-    if (imgFiles.length > remaining) {
-      showError(errorBoxId, `${imgFiles.length}枚のうち${remaining}枚のみ追加します（最大${MAX_PAGE_IMAGES}枚）`);
-    }
-    // ファイルサイズ上限チェック（修正：メモリ枯渇対策）
-    const oversized = toAdd.filter(f => f.size > 20 * 1024 * 1024);
-    if (oversized.length > 0) {
-      showError(errorBoxId, `${oversized.length}枚のファイルが大きすぎます（20MB以下）`);
-      toAdd = toAdd.filter(f => f.size <= 20 * 1024 * 1024);
-    }
-    toAdd.forEach(file => {
+  const attachmentBusy = { inline: false, add: false };
+  function isPdfFile(file) {
+    return file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  }
+  function readAttachment(file) {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const MAX = 1500;
-          let w = img.width, h = img.height;
-          if (w > MAX || h > MAX) {
-            if (w > h) { h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) { showError(errorBoxId, 'キャンバス処理に失敗しました（メモリ不足の可能性）'); return; }
-          ctx.drawImage(img, 0, 0, w, h);
-          const resized = canvas.toDataURL('image/jpeg', 0.78);
-          const entry   = {
-            base64: resized.split(',')[1],
-            mime: 'image/jpeg',  // キャンバスから生成されるため常にJPEG
-            name: sanitizeFileName(file.name)
-          };
-          pageImages[mode].push(entry);
-
-          // サムネイル（クロージャでentryを直接参照 → indexズレなし）
-          const thumb     = document.createElement('div');
-          thumb.className = 'page-thumb';
-          const imgEl     = document.createElement('img');
-          imgEl.src       = resized;
-          const rmBtn     = document.createElement('button');
-          rmBtn.className = 'page-thumb-remove';
-          rmBtn.textContent = '✕';
-          rmBtn.onclick = () => {
-            const idx = pageImages[mode].indexOf(entry);
-            if (idx !== -1) pageImages[mode].splice(idx, 1);
-            thumb.remove();
-          };
-          thumb.appendChild(imgEl); thumb.appendChild(rmBtn);
-          document.getElementById(tId).appendChild(thumb);
-        };
-        img.onerror = () => { showError(errorBoxId, `読み込めないファイルをスキップしました: ${file.name}`); };
-        img.src = e.target.result;
-      };
-      reader.onerror = () => { showError(errorBoxId, `ファイルの読み込みに失敗しました: ${file.name}`); };
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('ファイルを読み込めませんでした'));
+      reader.onabort = () => reject(new Error('読み込みが中断されました'));
       reader.readAsDataURL(file);
     });
+  }
+  function resizeAttachmentImage(dataUrl) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, 1500 / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('画像処理用のメモリが不足しています');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.78));
+        } catch (error) { reject(error); }
+      };
+      img.onerror = () => reject(new Error('画像を読み込めませんでした'));
+      img.src = dataUrl;
+    });
+  }
+  async function addPageFiles(files, mode, thumbsId) {
+    const errorBoxId = mode === 'inline' ? 'inlineErrorBox' : 'addErrorBox';
+    if (attachmentBusy[mode]) { showError(errorBoxId, '読み込み・アップロードが終わるまでお待ちください'); return; }
+    const tId = thumbsId || (mode === 'inline' ? 'inlinePageThumbs' : 'addImageThumbs');
+    const errors = [];
+    attachmentBusy[mode] = true;
+    try {
+      for (const file of files) {
+        const pdf = isPdfFile(file);
+        if (!pdf && !file.type.startsWith('image/')) { errors.push(file.name + ': 画像またはPDFを選択してください'); continue; }
+        if (pageImages[mode].length >= MAX_PAGE_IMAGES) { errors.push('一度に追加できるのは20ファイルまでです'); break; }
+        if (!file.size || file.size > 20 * 1024 * 1024) { errors.push(file.name + ': 空でない20MB以下のファイルを選択してください'); continue; }
+        const total = pageImages[mode].reduce((sum, entry) => sum + entry.size, 0);
+        if (total + file.size > 50 * 1024 * 1024) { errors.push(file.name + ': 合計50MBを超えます。先に選択済みファイルを保存してください'); continue; }
+        try {
+          if (pdf && await file.slice(0, 5).text() !== '%PDF-') throw new Error('PDF形式を確認できません');
+          let dataUrl = await readAttachment(file);
+          if (!pdf) dataUrl = await resizeAttachmentImage(dataUrl);
+          let name = file.name.replace(/[\\/\u0000-\u001f\u007f]/g, '_').slice(0, 160) || 'document.pdf';
+          if (pdf && !/\.pdf$/i.test(name)) name += '.pdf';
+          const entry = { base64: dataUrl.slice(dataUrl.indexOf(',') + 1), mime: pdf ? 'application/pdf' : 'image/jpeg', name, size: file.size };
+          pageImages[mode].push(entry);
+          const thumb = document.createElement('div');
+          thumb.className = pdf ? 'page-thumb pdf-thumb' : 'page-thumb';
+          if (pdf) { thumb.textContent = 'PDF\n' + name + '\n' + (file.size / 1024 / 1024).toFixed(1) + ' MB'; }
+          else { const img = document.createElement('img'); img.src = dataUrl; img.alt = name; thumb.appendChild(img); }
+          const remove = document.createElement('button');
+          remove.className = 'page-thumb-remove'; remove.textContent = '✕'; remove.setAttribute('aria-label', name + 'を選択から外す');
+          remove.onclick = () => {
+            if (attachmentBusy[mode]) return;
+            const index = pageImages[mode].indexOf(entry);
+            if (index >= 0) pageImages[mode].splice(index, 1);
+            thumb.remove();
+          };
+          thumb.appendChild(remove); entry.thumb = thumb;
+          document.getElementById(tId).appendChild(thumb);
+        } catch (error) { errors.push(file.name + ': ' + error.message); }
+      }
+    } finally { attachmentBusy[mode] = false; }
+    if (errors.length) showError(errorBoxId, errors.join(' / '));
+    else clearError(errorBoxId);
   }
 
   // ── ページ画像アップロード（最大3並列・エラー集約）────
@@ -744,11 +752,13 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
     const successBoxId   = isInline ? 'inlineSuccessBox'   : 'addSuccessBox';
     const thumbsId       = isInline ? 'inlinePageThumbs'   : 'addImageThumbs';
 
+    if (attachmentBusy[mode]) { showError(errorBoxId, '読み込み・アップロードが終わるまでお待ちください'); return; }
     if (!gasUrl)            { showError(errorBoxId, 'GAS URLを設定してください'); return; }
     if (!folderUrl)         { showError(errorBoxId, 'フォルダURLが取得できていません'); return; }
-    if (queue.length === 0) { showError(errorBoxId, '画像を選択してください'); return; }
+    if (queue.length === 0) { showError(errorBoxId, '画像またはPDFを選択してください'); return; }
 
     const btn = document.getElementById(btnId);
+    attachmentBusy[mode] = true;
     btn.disabled = true; btn.textContent = 'アップロード中…';
     clearError(errorBoxId); clearSuccess(successBoxId);
 
@@ -760,6 +770,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
     let successCount = 0;
     let doneCount    = 0;
     const errors        = [];
+    const uploadedFiles = [];
     const failedEntries = []; // 失敗したエントリを追跡（部分成功時の再送用）
     const snapshot      = [...queue]; // アップロード中の削除操作から保護
 
@@ -770,19 +781,22 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
           folderUrl,
           imageBase64: entry.base64,
           imageMime:   entry.mime || 'image/jpeg',  // MIMEタイプを送信
-          fileName:    'page_' + String(index + 1).padStart(3, '0') + '_' + Date.now() + '.jpg'
+          fileName:    entry.mime === 'application/pdf' ? entry.name : 'page_' + String(index + 1).padStart(3, '0') + '_' + Date.now() + '.jpg'
         }), 60000);
         const rawText = await res.text();
         let json;
         try { json = JSON.parse(rawText); }
-        catch(_) { errors.push(`${index + 1}枚目: JSON解析エラー — ${rawText.substring(0, 80)}`); failedEntries.push(entry); return; }
-        if (json.success) successCount++;
-        else { errors.push(`${index + 1}枚目: ${json.error || '不明なエラー'}`); failedEntries.push(entry); }
+        catch(_) { errors.push(`${index + 1}件目: JSON解析エラー — ${rawText.substring(0, 80)}`); failedEntries.push(entry); return; }
+        if (json.success) {
+          successCount++; entry.thumb?.remove();
+          uploadedFiles.push({name: entry.name, url: json.fileUrl});
+        }
+        else { errors.push(`${index + 1}件目: ${json.error || '不明なエラー'}`); failedEntries.push(entry); }
       } catch(e) {
         const errMsg = e.name === 'AbortError' ? 'タイムアウト（60秒）' : e.message;
-        errors.push(`${index + 1}枚目: ${errMsg}`);
+        errors.push(`${index + 1}件目: ${errMsg}`);
         failedEntries.push(entry);
-        appLog(`画像アップロードエラー(${index + 1}枚目): ${errMsg}`, 'error');
+        appLog(`画像アップロードエラー(${index + 1}件目): ${errMsg}`, 'error');
       } finally {
         doneCount++;
         fill.style.width = Math.round((doneCount / snapshot.length) * 100) + '%';
@@ -800,12 +814,25 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 
     if (errors.length > 0) showError(errorBoxId, errors.join(' / '));
     if (successCount > 0) {
-      showSuccess(successBoxId, `${successCount}枚アップロード完了！${failedEntries.length > 0 ? ` (${failedEntries.length}枚失敗・再送可)` : ''}`);
+      showSuccess(successBoxId, `${successCount}件アップロード完了！${failedEntries.length > 0 ? ` (${failedEntries.length}件失敗・再送可)` : ''}`);
+      const successBox = document.getElementById(successBoxId);
+      clearTimeout(Number(successBox.dataset.timerId)); successBox.dataset.timerId = '';
+      for (const saved of uploadedFiles) {
+        try {
+          const url = new URL(saved.url);
+          if (url.protocol !== 'https:' || url.hostname !== 'drive.google.com') continue;
+          const link = document.createElement('a');
+          link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+          link.textContent = '開く: ' + saved.name; link.style.display = 'block';
+          successBox.appendChild(link);
+        } catch (_) { /* URLが無い場合は保存結果だけを表示 */ }
+      }
       // 失敗エントリのみ残す（全成功時はキューと表示を全クリア）
       pageImages[mode] = failedEntries;
       if (failedEntries.length === 0) document.getElementById(thumbsId).innerHTML = '';
     }
 
+    attachmentBusy[mode] = false;
     btn.disabled = false; btn.textContent = '📤 ドライブにアップロード';
   }
 
@@ -820,6 +847,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
   // ── 本一覧を読み込む（連打防止） ─────────────────────
   async function loadBookList() {
     if (isLoadingBooks) return;
+    if (attachmentBusy.add || pageImages.add.length) { showError('listErrorBox', '選択中のファイルを保存するか選択から外してから、本一覧を更新してください'); return; }
     if (!gasUrl) { showError('listErrorBox', 'GAS URLを設定してください'); return; }
     isLoadingBooks = true;
     clearError('listErrorBox');
@@ -838,6 +866,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
       catch(_) { throw new Error(`JSON解析失敗: ${rawText.substring(0, 120)}`); }
       if (!json.success) throw new Error(json.error || '不明なエラー');
 
+      if (attachmentBusy.add || pageImages.add.length) return;
       const list = document.getElementById('bookList');
       list.innerHTML = '';
 
@@ -879,8 +908,9 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
   }
 
   function selectBook(book, itemEl) {
+    if (attachmentBusy.add) { showError('addErrorBox', '読み込み・アップロードが終わるまで本を切り替えないでください'); return; }
     if (pageImages.add.length > 0) {
-      if (!confirm(`選択中の${pageImages.add.length}枚の画像を破棄して別の本に切り替えますか？`)) return;
+      if (!confirm(`選択中の${pageImages.add.length}件のファイルを破棄して別の本に切り替えますか？`)) return;
     }
     document.querySelectorAll('.book-item').forEach(i => i.classList.remove('selected'));
     itemEl.classList.add('selected');
@@ -1424,6 +1454,7 @@ body { min-height: 100vh; background: #0e0d0b; background-image: radial-gradient
 
   // ── リセット ──────────────────────────────────────────
   function resetAll() {
+    if (attachmentBusy.inline) { showError('inlineErrorBox', '読み込み・アップロードが終わるまでお待ちください'); return; }
     imageBase64 = null; imageMime = 'image/jpeg'; isSaving = false;
     currentFolderUrl = ''; currentBookTitle = '';
     pageImages.inline = [];
